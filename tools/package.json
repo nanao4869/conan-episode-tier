@@ -1,0 +1,13 @@
+{
+  "name": "conan-episode-tier-tools",
+  "private": true,
+  "type": "module",
+  "description": "Data and image build scripts for the Conan episode tier list maker",
+  "scripts": {
+    "build-data": "node build-data.mjs"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "sharp": "^0.35.4"
+  }
+}

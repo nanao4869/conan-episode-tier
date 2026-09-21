@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>コナン エピソードTier表メーカー（べーた）</title>
+<meta name="description" content="名探偵コナンの好きなエピソードをTier表にして画像で保存できるツールです。マンガの333事件とアニメオリジナル471話に対応。">
+<meta name="theme-color" content="#0d1a3a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="コナン エピソードTier表メーカー">
+<meta property="og:title" content="名探偵コナン 好きなエピソード Tier表メーカー（べーた）">
+<meta property="og:description" content="名探偵コナンの好きなエピソードをドラッグでTier表に並べて、画像で保存・共有できます。マンガ333事件＋アニメオリジナル471話。">
+<meta property="og:url" content="https://nanao4869.github.io/conan-episode-tier/">
+<meta property="og:image" content="https://nanao4869.github.io/conan-episode-tier/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="名探偵コナン 好きなエピソード Tier表メーカー（べーた）">
+<meta name="twitter:description" content="名探偵コナンの好きなエピソードをドラッグでTier表に並べて、画像で保存・共有できます。">
+<meta name="twitter:image" content="https://nanao4869.github.io/conan-episode-tier/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1a3a'/%3E%3Crect x='10' y='12' width='14' height='10' fill='%23ff7f7f'/%3E%3Crect x='10' y='27' width='14' height='10' fill='%23ffdf7f'/%3E%3Crect x='10' y='42' width='14' height='10' fill='%237fff7f'/%3E%3Crect x='28' y='12' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='27' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='42' width='26' height='10' fill='%23555'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-mode="title">
+
+<header class="site-header">
+  <h1>名探偵コナン 好きなエピソード Tier表メーカー <span class="beta">べーた</span></h1>
+</header>
+
+<main class="page">
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+    <div class="seg" role="radiogroup" aria-label="表示の切り替え">
+      <span class="seg-label">表示</span>
+      <label><input type="radio" name="mode" value="image"><span>画像のみ</span></label>
+      <label><input type="radio" name="mode" value="badge"><span>話数つき</span></label>
+      <label><input type="radio" name="mode" value="title"><span>タイトルつき</span></label>
+    </div>
+    <button type="button" class="btn btn-accent" id="statsBtn" title="表に入れたエピソードの、登場キャラや年代などの傾向を集計します">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>集計
+    </button>
+    </div>
+    <div class="toolbar-actions">
+      <div class="seg" role="radiogroup" aria-label="保存する画像の形式">
+        <span class="seg-label">形式</span>
+        <label><input type="radio" name="format" value="png" checked><span>PNG</span></label>
+        <label><input type="radio" name="format" value="jpeg"><span>JPEG</span></label>
+      </div>
+      <button type="button" class="btn btn-primary" id="saveBtn">画像として保存（PNG）</button>
+      <button type="button" class="btn btn-x" id="postXBtn">Xに投稿</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+
+    <section class="board-col">
+      <div id="board" class="board">
+        <div id="listTitle" class="list-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Tier表のタイトル" data-placeholder="タイトルを入力"></div>
+        <div id="tiers" class="tiers"></div>
+        <div class="board-credit">名探偵コナン 好きなエピソード Tier表メーカー ／ 出典：少年サンデー公式「全事件レポート編纂室」／読売テレビ「事件ファイル」 ©青山剛昌／小学館</div>
+      </div>
+
+      <div class="board-actions">
+        <button type="button" class="btn btn-ghost" id="undoBtn" disabled title="1つ前の状態に戻します（Ctrl+Z）">↶ 元に戻す</button>
+        <button type="button" class="btn btn-ghost" id="redoBtn" disabled title="元に戻した操作をやり直します（Ctrl+Y）">↷ やり直す</button>
+        <button type="button" class="btn btn-ghost" id="addRowBtn">＋ 行を追加</button>
+        <button type="button" class="btn btn-ghost" id="clearAllBtn">全て未分類に戻す</button>
+        <button type="button" class="btn btn-ghost btn-danger" id="resetBtn">初期状態に戻す</button>
+      </div>
+      <div class="board-actions data-actions">
+        <button type="button" class="btn btn-ghost" id="exportBtn" title="今のTier表をJSONファイルとして保存します（バックアップ・他の端末への引き継ぎ用）">エクスポート（JSON）</button>
+        <button type="button" class="btn btn-ghost" id="importBtn" title="エクスポートしたJSONファイルから、Tier表を復元します">インポート</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+        <span class="data-hint">バックアップや、他の端末への引き継ぎに使えます</span>
+      </div>
+    </section>
+
+    <aside id="pool" class="pool" aria-label="未分類のエピソード">
+      <div class="pool-head">
+        <div class="pool-title">
+          <h2>エピソード</h2>
+          <span id="poolCount" class="pool-count"></span>
+          <button type="button" class="found-btn" id="foundBtn" title="今の絞り込みに合う、表に配置済みのエピソードへ移動します" hidden></button>
+          <button type="button" class="btn btn-ghost btn-sm filter-toggle" id="filterToggle" aria-expanded="false">絞り込み ▾</button>
+        </div>
+        <div class="pool-filters">
+          <input type="search" id="q" placeholder="タイトル・話数で検索" autocomplete="off" aria-label="検索">
+          <select id="kind" aria-label="種類で絞り込み">
+            <option value="">マンガ＋アニメ</option>
+            <option value="manga">マンガの事件のみ</option>
+            <option value="manga-tv">マンガ・アニメ化あり</option>
+            <option value="manga-notv">マンガ・アニメ化なし</option>
+            <option value="anime">アニメオリジナルのみ</option>
+          </select>
+        </div>
+        <div class="pool-filters pool-filters-2">
+          <select id="vol" aria-label="マンガの巻で絞り込み"><option value="">すべての巻</option></select>
+          <select id="year" aria-label="アニメの放送年で絞り込み"><option value="">すべての放送年</option></select>
+        </div>
+        <div class="pool-char-row">
+          <button type="button" class="btn btn-ghost btn-sm" id="charBtn">キャラで絞り込み</button>
+          <div id="charChips" class="char-chips"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="sortBtn" title="マンガとアニメはそれぞれ、番号順を逆にします">並び：古い順</button>
+        </div>
+      </div>
+      <div id="poolGrid" class="pool-grid"></div>
+    </aside>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>マンガの事件の情報・サムネイル画像は、少年サンデー公式サイト「名探偵コナン 全事件レポート編纂室」（websunday.net）の掲載内容を利用しています。</p>
+  <p>アニメオリジナルの情報・サムネイル画像は、読売テレビ「名探偵コナン 事件ファイル」（ytv.co.jp）の掲載内容を利用し、前編・後編などは1つにまとめています。アニメオリジナルかどうかとシーズンの区分は、Wikipedia「名探偵コナンのアニメエピソード一覧」を、マンガとアニメの対応は同「名探偵コナンの漫画エピソード一覧」を参考にしています。</p>
+  <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
+  <p class="version">Ver 1.0.0</p>
+</footer>
+
+<!-- エピソード詳細 -->
+<dialog id="detailDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <div class="detail-img"><img id="dImg" alt=""></div>
+    <p class="detail-no" id="dNo"></p>
+    <h3 class="detail-title" id="dTitle"></h3>
+    <p class="detail-file"><span class="detail-season" id="dSeason" title="Wikipedia「名探偵コナンのアニメエピソード一覧」のシーズン区分です" hidden></span><span id="dFile"></span></p>
+    <div id="dAnimeBox">
+      <p class="dlg-label">アニメ</p>
+      <ul class="anime-list" id="dAnime"></ul>
+    </div>
+    <div id="dCharsBox">
+      <p class="dlg-label" id="dCharsLabel">メインキャラ</p>
+      <div class="char-list" id="dChars"></div>
+    </div>
+    <p class="dlg-label">Tierに入れる</p>
+    <div class="chips" id="dChips"></div>
+    <a class="detail-link" id="dLink" target="_blank" rel="noopener noreferrer">公式サイトでこの事件を見る ↗</a>
+  </div>
+</dialog>
+
+<!-- 行の編集 -->
+<dialog id="tierDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">行の設定</h3>
+    <label class="dlg-label" for="tName">ラベルの名前</label>
+    <textarea id="tName" rows="2" maxlength="40"></textarea>
+    <p class="dlg-note tier-note">改行すると2行で表示されます（例：1行目に S、2行目に 最高）</p>
+    <p class="dlg-label">ラベルの色</p>
+    <div class="swatches" id="tSwatches"></div>
+    <label class="custom-color">好きな色にする <input type="color" id="tColor"></label>
+    <div class="dlg-grid">
+      <button type="button" class="btn btn-ghost" id="tAddAbove">上に行を追加</button>
+      <button type="button" class="btn btn-ghost" id="tAddBelow">下に行を追加</button>
+      <button type="button" class="btn btn-ghost" id="tClear">この行を空にする</button>
+      <button type="button" class="btn btn-ghost btn-danger" id="tDelete">この行を削除</button>
+    </div>
+    <button type="button" class="btn btn-primary dlg-done" data-close>閉じる</button>
+  </div>
+</dialog>
+
+<!-- キャラ絞り込み -->
+<dialog id="charDialog" class="dlg-wide">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">メインキャラで絞り込み</h3>
+    <p class="dlg-note">「全事件レポート編纂室」のメインキャラ情報をもとにしています。アニメオリジナルは公式の一覧がないため、あらすじに名前が出たキャラから推定しています（抜けや誤りがあります）。</p>
+    <div class="seg seg-dlg" role="radiogroup" aria-label="絞り込み方法">
+      <label><input type="radio" name="charMode" value="all" checked><span>全員が登場</span></label>
+      <label><input type="radio" name="charMode" value="any"><span>誰か1人でも登場</span></label>
+    </div>
+    <div class="char-grid" id="charGrid"></div>
+    <p class="char-result" id="charResult"></p>
+    <div class="dlg-grid">
+      <button type="button" class="btn btn-ghost" id="charClear">選択をクリア</button>
+      <button type="button" class="btn btn-primary" data-close>閉じる</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- 集計 -->
+<dialog id="statsDialog" class="dlg-wide dlg-stats">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">表の集計</h3>
+    <div class="stats-tabs" role="radiogroup" aria-label="集計の種類">
+      <label><input type="radio" name="statsTab" value="char" checked><span>キャラ</span></label>
+      <label><input type="radio" name="statsTab" value="group"><span>グループ</span></label>
+      <label><input type="radio" name="statsTab" value="combo"><span>コンビ</span></label>
+      <label><input type="radio" name="statsTab" value="era"><span>年代</span></label>
+      <label><input type="radio" name="statsTab" value="place"><span>舞台・事件</span></label>
+      <label><input type="radio" name="statsTab" value="kind"><span>マンガ・アニメ</span></label>
+      <label><input type="radio" name="statsTab" value="compare"><span>くらべる</span></label>
+    </div>
+    <p class="dlg-note stats-summary" id="statsSummary"></p>
+    <p class="dlg-note stats-legend" id="statsLegend">出番の○倍：全エピソードで出る割合に対して、表に何倍入れているか（高く評価している、とは別）</p>
+    <label class="stats-opt" id="statsAnimeLabel"><input type="checkbox" id="statsAnime" checked>アニメオリジナルも数える（キャラはあらすじからの推定）</label>
+
+    <!-- キャラ -->
+    <div id="statsPanel-char">
+      <div class="stats-controls">
+        <select id="statsSort" aria-label="並び順">
+          <option value="count">登場回数が多い順</option>
+          <option value="score">出番の割に評価が高い順</option>
+          <option value="more">出番の割に多く入れている順</option>
+          <option value="less">出番の割に少ない順</option>
+          <option value="rank">平均ランクが高い順</option>
+        </select>
+      </div>
+      <p class="dlg-note" id="statsHelp"></p>
+      <div class="stats-list" id="statsList"></div>
+      <button type="button" class="btn btn-ghost stats-more" id="statsMore" hidden>もっと見る</button>
+    </div>
+
+    <!-- グループ -->
+    <div id="statsPanel-group" hidden>
+      <p class="dlg-note">作中の所属や立場で分けた、この画面用のグループです（1人が複数に入ることがあります）。グループのメンバーが1人でも出ていれば、そのエピソードに出ているものとして数えます。</p>
+      <div class="stats-controls">
+        <select id="groupSort" aria-label="グループの並び順">
+          <option value="count">出番が多い順</option>
+          <option value="score">出番の割に評価が高い順</option>
+        </select>
+      </div>
+      <div class="stats-list" id="groupList"></div>
+    </div>
+
+    <!-- コンビ -->
+    <div id="statsPanel-combo" hidden>
+      <div class="stats-controls">
+        <select id="comboSort" aria-label="コンビの並び順">
+          <option value="count">一緒に出る回数が多い順</option>
+          <option value="lift">出番の割に多く入れている順</option>
+        </select>
+        <label class="stats-opt"><input type="checkbox" id="comboRegulars">いつも出るキャラ（全体の25%以上）も含める</label>
+      </div>
+      <p class="dlg-note">同じエピソードに一緒に出ている2人の組み合わせです。コナン・蘭・小五郎などは、ほとんどの話に出るので、初期は除いています。</p>
+      <div class="stats-list" id="comboList"></div>
+      <button type="button" class="btn btn-ghost stats-more" id="comboMore" hidden>もっと見る</button>
+    </div>
+
+    <!-- 年代 -->
+    <div id="statsPanel-era" hidden>
+      <div class="stats-controls">
+        <select id="eraUnit" aria-label="年代の区切り">
+          <option value="decade">10年ごと（1990年代…）</option>
+          <option value="year">1年ごと</option>
+        </select>
+        <select id="eraSort" aria-label="年代の並び順">
+          <option value="key">年代順</option>
+          <option value="count">頻度が高い順</option>
+          <option value="rank">平均段が良い順</option>
+        </select>
+        <select id="eraBasis" aria-label="マンガの時期の数え方">
+          <option value="anime" selected>マンガ：アニメ化された放送年で数える</option>
+          <option value="volume">マンガ：単行本の発売年で数える</option>
+        </select>
+      </div>
+      <p class="dlg-note" id="eraNote"></p>
+      <p class="stats-top" id="eraTop"></p>
+      <div class="stats-list" id="eraList"></div>
+    </div>
+
+    <!-- 舞台・事件のタイプ -->
+    <div id="statsPanel-place" hidden>
+      <p class="dlg-note">エピソードの題名・場所・あらすじに、特定の言葉が出てくるかどうかで自動判定した目安です（1つのエピソードに複数付くことも、付かないこともあります）。</p>
+      <h4 class="stats-h stats-h-first">舞台</h4>
+      <div class="stats-list" id="placeList"></div>
+      <h4 class="stats-h">事件のタイプ</h4>
+      <div class="stats-list" id="typeList"></div>
+    </div>
+
+    <!-- マンガ・アニメ -->
+    <div id="statsPanel-kind" hidden>
+      <p class="stats-top" id="kindTop"></p>
+      <div class="stats-list" id="kindList"></div>
+    </div>
+
+    <!-- くらべる -->
+    <div id="statsPanel-compare" hidden>
+      <p class="dlg-note">自分の表のリンクを友達に送る（Xに貼る）と、友達が開くだけで二人の表を比べられます。友達のリンクを開いたときも、自動でここに読み込まれます。リンクには表の中身が入っていて、サーバーには何も送られません。</p>
+      <div class="stats-controls">
+        <button type="button" class="btn btn-primary" id="linkCopyBtn">自分の表のリンクをコピー</button>
+        <button type="button" class="btn btn-x" id="linkPostBtn">リンクをXに投稿</button>
+      </div>
+      <div class="cmp-paste">
+        <input type="text" id="linkPaste" placeholder="友達のリンクを貼り付け" autocomplete="off" aria-label="友達のリンク">
+        <button type="button" class="btn btn-ghost" id="linkLoadBtn">くらべる</button>
+      </div>
+      <div class="stats-controls cmp-file">
+        <button type="button" class="btn btn-ghost btn-sm" id="compareBtn">ファイル（JSON）で比べる</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="compareClear" hidden>比べる相手をクリア</button>
+        <input type="file" id="compareFile" accept=".json,application/json" hidden>
+      </div>
+      <div id="compareBody"></div>
+    </div>
+
+    <div class="stats-save-opts">
+      <label class="stats-opt">画像に出す件数
+        <select id="statsTopN" aria-label="画像に出す件数">
+          <option value="3" selected>Top3</option>
+          <option value="5">Top5</option>
+          <option value="10">Top10</option>
+        </select>
+      </label>
+    </div>
+    <div class="stats-save">
+      <select id="statsFormat" aria-label="画像の形式">
+        <option value="png">PNG</option>
+        <option value="jpeg">JPEG</option>
+      </select>
+      <button type="button" class="btn btn-accent" id="statsSaveBtn">この集計を画像で保存</button>
+    </div>
+    <button type="button" class="btn btn-primary dlg-done" data-close>閉じる</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<script src="data/episodes.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

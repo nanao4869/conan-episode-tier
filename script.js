@@ -1185,9 +1185,7 @@
   postXBtn.addEventListener("click", () => {
     const empty = !placedEpisodes(true).length;
     $("postBoardBtn").disabled = empty;
-    $("postBoardNote").textContent = empty
-      ? "表にエピソードを入れると、選べます。"
-      : "投稿欄には長いリンクが入りますが、Xに投稿すると、通常は短く表示されます。表の画像は、「画像として保存」で保存して、添付してください。";
+    $("postBoardNote").hidden = !empty; // only explains why the choice is off
     postDlg.showModal();
   });
 

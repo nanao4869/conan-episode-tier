@@ -170,6 +170,7 @@
   const tierOf = (no) => state.tiers.find((t) => t.items.includes(no));
 
   function moveEpisode(no, tierId, index) {
+    if (viewMode) return;
     track(() => {
       state.tiers.forEach((t) => {
         const i = t.items.indexOf(no);
@@ -720,6 +721,7 @@
       b.style.color = textColorFor(t.color);
       b.textContent = t.name.replace(/\n/g, " ").trim() || "　";
       b.addEventListener("click", () => {
+        if (viewMode) return; // never move anything in a friend's board
         moveEpisode(no, t.id);
         detailDlg.close();
       });
@@ -730,6 +732,7 @@
     pb.className = "chip chip-pool" + (cur ? "" : " is-current");
     pb.textContent = "未分類";
     pb.addEventListener("click", () => {
+      if (viewMode) return;
       moveEpisode(no, null);
       detailDlg.close();
     });

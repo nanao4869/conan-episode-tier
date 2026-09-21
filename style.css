@@ -526,3 +526,6 @@ body.viewing .list-title:hover { background: none; }
 .post-opt span { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
 .post-opt small { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
 .post-opt small[hidden] { display: none; }
+
+/* the hidden attribute must always win: several elements set their own display (flex/block), which silently overrode it */
+[hidden] { display: none !important; }

@@ -1787,7 +1787,7 @@
     if ((tab === "char" && $("statsSort").value === "score") || (tab === "group" && $("groupSort").value === "score")) legend.append(document.createElement("br"), document.createTextNode(LEGEND_ABOVE));
     const { placed } = ctx;
     const nManga = placed.filter((p) => !isAnime(p.ep)).length;
-    $("statsSummary").textContent = placed.length
+    $("statsSummary").textContent = placed.length && !viewMode
       ? `表に入れた${placed.length}話（マンガ${nManga}・アニメ${placed.length - nManga}）を集計しています。` +
         (!ctx.enough && tab !== "compare" ? `「出番の○倍」の表示は、${MIN_PLACED_FOR_BIAS}話以上入れると出ます。` : "")
       : "";
@@ -1839,8 +1839,9 @@
   };
 
   // Compares the board with the friend's. Shared by the screen and the image.
+  const myTiers = () => (viewMode ? ownState : state).tiers; // while viewing, the board on screen is the friend's
   function computeCompare() {
-    const mine = boardPositions(state.tiers);
+    const mine = boardPositions(myTiers());
     const theirs = boardPositions(compareBoard.tiers);
     const shared = [...mine.keys()].filter((no) => theirs.has(no));
     const out = { mineN: mine.size, theirN: theirs.size, shared: shared.length, agreement: null, charSim: null, both: [], split: [], common: [] };
@@ -1852,7 +1853,7 @@
     // Regulars (コナン, 蘭, 小五郎…) are in nearly every board, so leave them out or every pair looks alike.
     const everyone = charCounts(EPISODES);
     const regular = new Set([...everyone.entries()].filter(([, n]) => n / EPISODES.length >= REGULAR_SHARE).map(([id]) => id));
-    const sa = boardCharScores(state.tiers);
+    const sa = boardCharScores(myTiers());
     const sb = boardCharScores(compareBoard.tiers);
     regular.forEach((id) => {
       sa.delete(id);
@@ -2095,7 +2096,7 @@
     const n = Number($("statsTopN").value) || 3;
     const stage = mk("div", "export-stage");
     const sheet = mk("div", "xs");
-    sheet.append(mk("h2", "xs-title", `${(state.title || "").trim() || "Tier表"}の集計`), mk("p", "xs-sub", STATS_IMAGE_SUB[tab]));
+    sheet.append(mk("h2", "xs-title", `${((viewMode ? ownState : state).title || "").trim() || "Tier表"}の集計`), mk("p", "xs-sub", STATS_IMAGE_SUB[tab]));
     if (tab === "compare") buildCompareSheet(sheet, n);
     else buildRankSheet(sheet, tab, n);
     // how many episodes were counted and which options were on: useful, but not the point, so it goes last
@@ -2234,6 +2235,11 @@
     titleEl.textContent = state.title;
     const t = (board.title || "").trim();
     $("viewBannerText").textContent = t ? `「${t}」を表示中（閲覧モード）` : `${name}の表を表示中（閲覧モード）`;
+    // the friend's board is also the "other side" of a comparison, which only makes sense if we have a board of our own
+    compareBoard = { name: "リンクから", title: board.title, tiers: board.tiers };
+    const hasOwn = ownState.tiers.some((t) => t.items.length);
+    $("viewCompareBtn").hidden = !hasOwn;
+    $("viewExitBtn").textContent = hasOwn ? "自分の表に戻る" : "自分の表を作る";
     $("viewBanner").hidden = false;
     render();
     window.scrollTo(0, 0);
@@ -2252,21 +2258,22 @@
     render();
   }
   $("viewExitBtn").addEventListener("click", exitView);
+  // Compare is opt-in: nothing opens by itself when a link is opened.
+  $("viewCompareBtn").addEventListener("click", () => {
+    document.querySelector('input[name="statsTab"][value="compare"]').checked = true;
+    statsOpen.clear();
+    renderStats();
+    statsDlg.showModal();
+  });
 
-  // Opened from a friend's link. If our own board is empty, show theirs (view only); otherwise keep ours and compare.
+  // Opened from a friend's link: always show theirs in view mode; comparing with our own board is a button in the banner.
   async function openIncomingShare() {
     if (!location.hash.startsWith(SHARE_PREFIX)) return;
     const payload = location.hash.slice(SHARE_PREFIX.length);
     history.replaceState(null, "", location.pathname + location.search); // the link is one-shot: a reload shouldn't re-open it
     const board = await decodeBoard(payload);
     if (!board) return toast("リンクを読み込めませんでした");
-    const own = viewMode ? ownState : state;
-    if (!own.tiers.some((t) => t.items.length)) return enterView(board, "友達");
-    compareBoard = { name: "リンクから", title: board.title, tiers: board.tiers };
-    document.querySelector('input[name="statsTab"][value="compare"]').checked = true;
-    statsOpen.clear();
-    renderStats();
-    statsDlg.showModal();
+    enterView(board, "友達");
   }
 
   $("compareBtn").addEventListener("click", () => $("compareFile").click());

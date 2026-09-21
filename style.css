@@ -529,3 +529,13 @@ body.viewing .list-title:hover { background: none; }
 
 /* the hidden attribute must always win: several elements set their own display (flex/block), which silently overrode it */
 [hidden] { display: none !important; }
+
+.view-banner-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+/* the comparison opened from the view-mode banner: our board vs the one on screen, nothing else applies */
+body.viewing .stats-tabs,
+body.viewing #statsPanel-compare .stats-controls,
+body.viewing #statsPanel-compare .cmp-paste,
+body.viewing #statsPanel-compare .cmp-file,
+body.viewing #statsSummary,
+body.viewing .stats-save-opts { display: none; }
+body.viewing #statsPanel-compare > .dlg-note { display: none; }

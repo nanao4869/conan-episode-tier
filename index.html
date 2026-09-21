@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.4.3">
+<link rel="stylesheet" href="style.css?v=1.5.0">
 </head>
 <body data-mode="title">
 
@@ -60,7 +60,10 @@
     <section class="board-col">
       <div id="viewBanner" class="view-banner" hidden>
         <span id="viewBannerText"></span>
-        <button type="button" class="btn btn-primary" id="viewExitBtn">自分の表を作る</button>
+        <span class="view-banner-btns">
+          <button type="button" class="btn btn-accent" id="viewCompareBtn" hidden>自分の表とくらべる</button>
+          <button type="button" class="btn btn-primary" id="viewExitBtn">自分の表を作る</button>
+        </span>
       </div>
       <div id="board" class="board">
         <div id="listTitle" class="list-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Tier表のタイトル" data-placeholder="タイトルを入力"></div>
@@ -132,7 +135,7 @@
   <p>マンガの事件の情報・サムネイル画像は、少年サンデー公式サイト「名探偵コナン 全事件レポート編纂室」（websunday.net）の掲載内容を利用しています。</p>
   <p>アニメオリジナルの情報・サムネイル画像は、読売テレビ「名探偵コナン 事件ファイル」（ytv.co.jp）の掲載内容を利用し、前編・後編などは1つにまとめています。アニメオリジナルかどうかとシーズンの区分は、Wikipedia「名探偵コナンのアニメエピソード一覧」を、マンガとアニメの対応は同「名探偵コナンの漫画エピソード一覧」を参考にしています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.4.3</p>
+  <p class="version">Ver 1.5.0</p>
 </footer>
 
 <!-- エピソード詳細 -->
@@ -353,7 +356,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.4.3"></script>
-<script src="script.js?v=1.4.3"></script>
+<script src="data/episodes.js?v=1.5.0"></script>
+<script src="script.js?v=1.5.0"></script>
 </body>
 </html>

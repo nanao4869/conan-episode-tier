@@ -2230,7 +2230,7 @@
     titleEl.contentEditable = "false";
     titleEl.textContent = state.title;
     const t = (board.title || "").trim();
-    $("viewBannerText").textContent = t ? `「${t}」を表示中（見るだけです）` : `${name}の表を表示中（見るだけです）`;
+    $("viewBannerText").textContent = t ? `「${t}」を表示中（閲覧モード）` : `${name}の表を表示中（閲覧モード）`;
     $("viewBanner").hidden = false;
     render();
     window.scrollTo(0, 0);

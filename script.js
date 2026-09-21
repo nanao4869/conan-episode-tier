@@ -501,6 +501,7 @@
     const ghost = drag.item.cloneNode(true);
     ghost.classList.add("ghost");
     ghost.style.width = `${r.width}px`;
+    ghost.style.setProperty("--tile", `${r.width - 2}px`); // the tile size in the list can differ from the board's; keep the picture and badge proportional
     document.body.append(ghost);
     drag.ghost = ghost;
     drag.ph = document.createElement("div");

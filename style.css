@@ -41,6 +41,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-bottom: 3px solid var(--red);
 }
 .site-header h1 { margin: 0; font-size: 20px; line-height: 1.35; }
+.site-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.site-link { color: #cfe3ff; font-size: 13px; text-decoration: none; padding: 3px 12px; border: 1px solid rgba(207, 227, 255, .45); border-radius: 999px; white-space: nowrap; }
+.site-link:hover { background: rgba(255, 255, 255, .12); color: #fff; }
 .site-header .beta {
   display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px;
   background: var(--red); color: #fff; font-size: 12px; vertical-align: middle;

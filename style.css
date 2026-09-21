@@ -487,3 +487,16 @@ dialog.dlg-stats { width: min(94vw, 680px); }
 .cmp-file { margin-top: 8px; }
 
 .stats-opt[hidden] { display: none; }
+
+/* ---------- view-only mode (a friend's board opened from a link) ---------- */
+.view-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 10px; padding: 10px 14px; border-radius: 10px; background: #2a2a33; border-left: 5px solid #ffd54a; font-size: 14px; font-weight: 700; }
+.view-banner[hidden] { display: none; }
+body.viewing .pool,
+body.viewing .board-actions,
+body.viewing .toolbar-actions,
+body.viewing #statsBtn,
+body.viewing .tier-tools { display: none; }
+body.viewing .workspace { grid-template-columns: minmax(0, 1fr); }
+body.viewing .item { cursor: pointer; }
+body.viewing .tier-label { cursor: default; }
+body.viewing .list-title:hover { background: none; }

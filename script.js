@@ -85,8 +85,14 @@
   }
 
   let state = loadState() || defaultState();
+  // View-only mode: a friend's board shown in place of ours (only when ours is empty). Nothing is saved while viewing.
+  let viewMode = false;
+  let ownState = null;
+  let shareTimer = 0; // the link to our own board is rebuilt a moment after every change (see scheduleShareLink)
+  let shareCache = { key: "", link: "" };
 
   function save() {
+    if (viewMode) return; // never write a friend's board over our own
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
@@ -138,6 +144,7 @@
   }
 
   function undo() {
+    if (viewMode) return;
     if (!undoStack.length) return;
     redoStack.push(snapshot());
     applySnapshot(undoStack.pop());
@@ -146,6 +153,7 @@
   }
 
   function redo() {
+    if (viewMode) return;
     if (!redoStack.length) return;
     undoStack.push(snapshot());
     applySnapshot(redoStack.pop());
@@ -422,6 +430,7 @@
     renderTiers();
     renderPool();
     if (statsDlg.open) renderStats(); // the stats show where each episode sits, so keep them current
+    scheduleShareLink();
   }
 
   /* ---------------------------------------------------------- drag and drop */
@@ -484,7 +493,7 @@
   });
 
   function startDrag() {
-    if (!drag || drag.started) return;
+    if (!drag || drag.started || viewMode) return; // viewing: a press/tap still opens the details, but nothing can be moved
     clearTimeout(drag.timer);
     drag.started = true;
     const r = drag.item.getBoundingClientRect();
@@ -725,6 +734,8 @@
       detailDlg.close();
     });
     chips.append(pb);
+    $("dChips").hidden = viewMode;
+    $("dChips").previousElementSibling.hidden = viewMode;
     detailDlg.showModal();
   }
 
@@ -890,6 +901,7 @@
   tiersEl.addEventListener("click", (e) => {
     const b = e.target.closest("[data-action]");
     if (!b) return;
+    if (viewMode) return;
     const id = b.dataset.tier;
     const i = state.tiers.findIndex((t) => t.id === id);
     const act = b.dataset.action;
@@ -1130,7 +1142,7 @@
   }
   const saveIdle = () => `画像として保存（${saveFormat === "jpeg" ? "JPEG" : "PNG"}）`;
   const POST_IDLE = "Xに投稿";
-  const SHARE_TEXT = "名探偵コナンの好きなエピソードTier表を作りました！ #コナンエピソードTier表 #名探偵コナン";
+  const SHARE_TEXT = "名探偵コナンの好きなエピソードTier表を作りました！ リンクから私の表とくらべられます #コナンエピソードTier表 #名探偵コナン";
   const pageUrl = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : "");
 
   const saveBtn = $("saveBtn");
@@ -1165,10 +1177,11 @@
     if (canShareFiles()) {
       const dataUrl = await renderImage(postXBtn, POST_IDLE, "png");
       if (!dataUrl) return;
+      const shareUrl = (await shareLinkNow()) || pageUrl();
       const file = dataUrlToFile(dataUrl, imageName("png"));
       if (navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({ files: [file], text: SHARE_TEXT, ...(pageUrl() ? { url: pageUrl() } : {}) });
+          await navigator.share({ files: [file], text: SHARE_TEXT, ...(shareUrl ? { url: shareUrl } : {}) });
           return;
         } catch (e) {
           if (e.name === "AbortError") return; // the user closed the share sheet
@@ -1177,8 +1190,11 @@
       }
     }
     // The image is never saved or attached automatically. Opening happens right in the click, so popup blockers allow it.
+    // The link carries the board, so whoever opens it can compare with their own. Built ahead of time (shareLinkNow is
+    // instant when the cache is fresh) so that window.open still happens inside the click and isn't blocked.
+    const shareUrl = (await shareLinkNow()) || pageUrl();
     let url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}`;
-    if (pageUrl()) url += `&url=${encodeURIComponent(pageUrl())}`;
+    if (shareUrl) url += `&url=${encodeURIComponent(shareUrl)}`;
     window.open(url, "_blank", "noopener");
     toast("Xの投稿画面を開きました。画像は「画像として保存」で保存して添付してください");
   });
@@ -2126,6 +2142,18 @@
   }
 
   const shareBase = () => location.href.split("#")[0];
+
+  // The link for the current board, or "" while the board is empty. Cached by board content.
+  async function shareLinkNow() {
+    if (!placedEpisodes(true).length) return "";
+    const key = snapshot();
+    if (shareCache.key !== key) shareCache = { key, link: shareBase() + SHARE_PREFIX + (await encodeBoard()) };
+    return shareCache.link;
+  }
+  function scheduleShareLink() {
+    clearTimeout(shareTimer);
+    shareTimer = setTimeout(() => shareLinkNow().catch(() => {}), 300);
+  }
   async function myShareLink() {
     if (!placedEpisodes(true).length) {
       toast("表にエピソードを入れてから、リンクを作ってください");
@@ -2175,12 +2203,44 @@
     renderStats();
   });
 
-  // Opened from a friend's link: keep our own board, load theirs for comparison and show the result.
+  function enterView(board, name) {
+    if (!viewMode) ownState = state;
+    viewMode = true;
+    state = { ...board, mode: ownState.mode }; // keep the viewer's own display setting
+    document.body.classList.add("viewing");
+    titleEl.contentEditable = "false";
+    titleEl.textContent = state.title;
+    const t = (board.title || "").trim();
+    $("viewBannerText").textContent = t ? `「${t}」を表示中（見るだけです）` : `${name}の表を表示中（見るだけです）`;
+    $("viewBanner").hidden = false;
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  function exitView() {
+    if (!viewMode) return;
+    state = ownState;
+    ownState = null;
+    viewMode = false;
+    document.body.classList.remove("viewing");
+    titleEl.contentEditable = "true";
+    titleEl.textContent = state.title;
+    $("viewBanner").hidden = true;
+    syncModeRadios();
+    render();
+  }
+  $("viewExitBtn").addEventListener("click", exitView);
+
+  // Opened from a friend's link. If our own board is empty, show theirs (view only); otherwise keep ours and compare.
   async function openIncomingShare() {
     if (!location.hash.startsWith(SHARE_PREFIX)) return;
     const payload = location.hash.slice(SHARE_PREFIX.length);
     history.replaceState(null, "", location.pathname + location.search); // the link is one-shot: a reload shouldn't re-open it
-    if (!(await loadShared(payload, "リンクから"))) return toast("リンクを読み込めませんでした");
+    const board = await decodeBoard(payload);
+    if (!board) return toast("リンクを読み込めませんでした");
+    const own = viewMode ? ownState : state;
+    if (!own.tiers.some((t) => t.items.length)) return enterView(board, "友達");
+    compareBoard = { name: "リンクから", title: board.title, tiers: board.tiers };
     document.querySelector('input[name="statsTab"][value="compare"]').checked = true;
     statsOpen.clear();
     renderStats();

@@ -6,13 +6,14 @@
   --line2: #3a3a44;
   --text: #ececf2;
   --muted: #9a9aa8;
-  --blue: #2b7de9;
+  --blue: #1a73d8;
   --blue-dark: #1b5cb8;
   --red: #e0303f;
   --tile: 80px;
   --label-w: 100px;
   --fs: 1;
-  --font: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans JP", sans-serif;
+  --font-system: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans JP", sans-serif;
+  --font: "M PLUS Rounded 1c", "Hiragino Maru Gothic Pro", var(--font-system);
 }
 
 body[data-mode="title"] { --item-h: calc(var(--tile) + 30px); }
@@ -228,7 +229,7 @@ textarea#tName {
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------- image export (rendered off-screen at a fixed desktop layout) ---------- */
-.export-stage { position: fixed; left: -12000px; top: 0; width: 1000px; pointer-events: none; }
+.export-stage { font-family: var(--font-system); position: fixed; left: -12000px; top: 0; width: 1000px; pointer-events: none; }
 .board.exporting { --tile: 80px; --label-w: 100px; --fs: 1; width: 1000px; border: 0; border-radius: 0; padding: 16px; }
 .board.exporting .list-title { pointer-events: none; }
 .board.exporting .list-title:empty { display: none; }
@@ -442,7 +443,7 @@ dialog.dlg-stats { width: min(94vw, 680px); }
 .stats-save-opts + .stats-save { margin-top: 8px; }
 
 /* ---------- stats image (summary card) ---------- */
-.xs { width: 760px; padding: 28px 30px 20px; background: #202027; color: var(--text); font-family: var(--font); line-height: 1.5; }
+.xs { width: 760px; padding: 28px 30px 20px; background: #202027; color: var(--text); font-family: inherit; line-height: 1.5; }
 .xs-title { margin: 0; font-size: 26px; font-weight: 800; }
 .xs-sub { margin: 2px 0 0; font-size: 15px; font-weight: 700; color: #ffe38a; }
 .xs-cond { margin: 6px 0 16px; font-size: 12px; color: var(--muted); }

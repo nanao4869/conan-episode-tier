@@ -539,3 +539,8 @@ body.viewing #statsPanel-compare .cmp-file,
 body.viewing #statsSummary,
 body.viewing .stats-save-opts { display: none; }
 body.viewing #statsPanel-compare > .dlg-note { display: none; }
+
+.cmp-ep { cursor: pointer; }
+.cmp-ep:hover { background: #33333d; }
+.cmp-ep:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.cmp-more { margin-top: 2px; }

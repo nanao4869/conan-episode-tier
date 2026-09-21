@@ -1308,6 +1308,7 @@
   let comboExpanded = false;
   let compareBoard = null; // a friend's board: { name, title, tiers }
   const statsOpen = new Set(); // breakdowns that are open, so a re-render keeps them open
+  const cmpExpanded = new Set(); // compare lists shown in full ("both", "split", "mine", "their")
 
   const mk = (tag, cls, text) => {
     const e = document.createElement(tag);
@@ -1888,6 +1889,7 @@
     const img = new Image();
     img.src = thumbOf(ep);
     img.alt = "";
+    img.loading = "lazy"; // a full list can be long
     const main = mk("div", "cmp-main");
     main.append(mk("div", "cmp-title", `${labelOf(ep)}　${ep.title}`));
     const chips = mk("div", "cmp-chips");
@@ -1899,6 +1901,17 @@
       chips.append(chip);
     }
     row.append(img, main, chips);
+    // click / Enter opens the episode's details (over the stats dialog, like the tiles in the breakdowns)
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.title = "クリックで詳細を表示";
+    row.addEventListener("click", () => openDetail(no));
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openDetail(no);
+      }
+    });
     return row;
   }
 
@@ -1919,24 +1932,34 @@
     if (c.agreement !== null) card(pct(c.agreement), "評価の近さ（共通の話を入れた高さの近さ）");
     if (c.charSim !== null) card(pct(c.charSim), "推しキャラの近さ（いつも出るキャラを除く）");
     body.append(cards);
-    const section = (title, items, empty, row) => {
+    const section = (key, title, items, empty, row) => {
       body.append(mk("h4", "stats-h", title));
       const box = mk("div", "cmp-list");
       if (!items.length) box.append(statsNote(empty));
-      items.slice(0, 6).forEach((x) => box.append(row(x)));
-      if (items.length > 6) box.append(statsNote(`ほか ${items.length - 6}話`));
+      const open = cmpExpanded.has(key);
+      (open ? items : items.slice(0, 6)).forEach((x) => box.append(row(x)));
+      if (items.length > 6) {
+        const btn = mk("button", "btn btn-ghost btn-sm cmp-more", open ? "閉じる" : `ほか ${items.length - 6}話も表示`);
+        btn.type = "button";
+        btn.addEventListener("click", () => {
+          if (open) cmpExpanded.delete(key);
+          else cmpExpanded.add(key);
+          renderStats();
+        });
+        box.append(btn);
+      }
       body.append(box);
     };
     const both = (x) => compareEpisodeRow(x.no, x.a, x.b);
     if (c.agreement === null) {
       body.append(statsNote(`共通のエピソードが${MIN_COUNT_FOR_BIAS}話以上あると、評価の近さなどを表示します。`));
     } else {
-      section("二人とも上位に入れた話", c.both, "二人とも上位の行に入れた話は、まだありません。", both);
-      section("評価が分かれた話", c.split, "大きく評価が分かれた話は、ありません。", both);
+      section("both", "二人とも上位に入れた話", c.both, "二人とも上位の行に入れた話は、まだありません。", both);
+      section("split", "評価が分かれた話", c.split, "大きく評価が分かれた話は、ありません。", both);
     }
     // one-sided lists don't need any shared episodes
-    section("あなただけが評価した話", c.mineOnly, "相手の表に入っていない話は、ありません。", (x) => compareEpisodeRow(x.no, x.side, null));
-    section("相手だけが評価した話", c.theirOnly, "あなたの表に入っていない話は、ありません。", (x) => compareEpisodeRow(x.no, null, x.side));
+    section("mine", "あなただけが評価した話", c.mineOnly, "相手の表に入っていない話は、ありません。", (x) => compareEpisodeRow(x.no, x.side, null));
+    section("their", "相手だけが評価した話", c.theirOnly, "あなたの表に入っていない話は、ありません。", (x) => compareEpisodeRow(x.no, null, x.side));
     body.append(mk("p", "dlg-note", "「だけが評価した話」は、もう一方の表に入っていない話です。低く評価している、という意味ではなく、まだ見ていないだけかもしれません。"));
     if (c.agreement !== null) {
       body.append(mk("h4", "stats-h", "二人とも推していそうなキャラ"));
@@ -2279,6 +2302,7 @@
   $("viewCompareBtn").addEventListener("click", () => {
     document.querySelector('input[name="statsTab"][value="compare"]').checked = true;
     statsOpen.clear();
+    cmpExpanded.clear();
     renderStats();
     statsDlg.showModal();
   });
@@ -2305,6 +2329,7 @@
 
   $("statsBtn").addEventListener("click", () => {
     statsOpen.clear();
+    cmpExpanded.clear();
     statsExpanded = false;
     comboExpanded = false;
     renderStats();

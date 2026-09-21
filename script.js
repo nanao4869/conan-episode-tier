@@ -1844,7 +1844,9 @@
     const mine = boardPositions(myTiers());
     const theirs = boardPositions(compareBoard.tiers);
     const shared = [...mine.keys()].filter((no) => theirs.has(no));
-    const out = { mineN: mine.size, theirN: theirs.size, shared: shared.length, agreement: null, charSim: null, both: [], split: [], common: [] };
+    // Episodes only one of us put on the board, highest row first. Not being on the other board does NOT mean "rated low".
+    const only = (from, other) => [...from.entries()].filter(([no]) => !other.has(no)).map(([no, side]) => ({ no, side })).sort((x, y) => y.side.pos - x.side.pos);
+    const out = { mineN: mine.size, theirN: theirs.size, shared: shared.length, agreement: null, charSim: null, both: [], split: [], common: [], mineOnly: only(mine, theirs), theirOnly: only(theirs, mine) };
     if (shared.length < MIN_COUNT_FOR_BIAS) return out;
     const diffs = shared.map((no) => ({ no, a: mine.get(no), b: theirs.get(no), d: Math.abs(mine.get(no).pos - theirs.get(no).pos) }));
     out.agreement = 1 - diffs.reduce((s, x) => s + x.d, 0) / diffs.length;
@@ -1890,6 +1892,7 @@
     main.append(mk("div", "cmp-title", `${labelOf(ep)}　${ep.title}`));
     const chips = mk("div", "cmp-chips");
     for (const [who, side] of [["あなた", a], ["相手", b]]) {
+      if (!side) continue;
       const chip = mk("span", "cmp-chip", `${who}：${lineOf(side.tier.name) || "　"}`);
       chip.style.background = side.tier.color;
       chip.style.color = textColorFor(side.tier.color);
@@ -1916,18 +1919,26 @@
     if (c.agreement !== null) card(pct(c.agreement), "評価の近さ（共通の話を入れた高さの近さ）");
     if (c.charSim !== null) card(pct(c.charSim), "推しキャラの近さ（いつも出るキャラを除く）");
     body.append(cards);
+    const section = (title, items, empty, row) => {
+      body.append(mk("h4", "stats-h", title));
+      const box = mk("div", "cmp-list");
+      if (!items.length) box.append(statsNote(empty));
+      items.slice(0, 6).forEach((x) => box.append(row(x)));
+      if (items.length > 6) box.append(statsNote(`ほか ${items.length - 6}話`));
+      body.append(box);
+    };
+    const both = (x) => compareEpisodeRow(x.no, x.a, x.b);
     if (c.agreement === null) {
       body.append(statsNote(`共通のエピソードが${MIN_COUNT_FOR_BIAS}話以上あると、評価の近さなどを表示します。`));
     } else {
-      const section = (title, items, empty) => {
-        body.append(mk("h4", "stats-h", title));
-        const box = mk("div", "cmp-list");
-        if (!items.length) box.append(statsNote(empty));
-        items.slice(0, 6).forEach((x) => box.append(compareEpisodeRow(x.no, x.a, x.b)));
-        body.append(box);
-      };
-      section("二人とも上位に入れた話", c.both, "二人とも上位の行に入れた話は、まだありません。");
-      section("評価が分かれた話", c.split, "大きく評価が分かれた話は、ありません。");
+      section("二人とも上位に入れた話", c.both, "二人とも上位の行に入れた話は、まだありません。", both);
+      section("評価が分かれた話", c.split, "大きく評価が分かれた話は、ありません。", both);
+    }
+    // one-sided lists don't need any shared episodes
+    section("あなただけが評価した話", c.mineOnly, "相手の表に入っていない話は、ありません。", (x) => compareEpisodeRow(x.no, x.side, null));
+    section("相手だけが評価した話", c.theirOnly, "あなたの表に入っていない話は、ありません。", (x) => compareEpisodeRow(x.no, null, x.side));
+    body.append(mk("p", "dlg-note", "「だけが評価した話」は、もう一方の表に入っていない話です。低く評価している、という意味ではなく、まだ見ていないだけかもしれません。"));
+    if (c.agreement !== null) {
       body.append(mk("h4", "stats-h", "二人とも推していそうなキャラ"));
       const chars = mk("div", "cmp-chars");
       c.common.slice(0, 6).forEach((x) => {
@@ -1940,7 +1951,6 @@
       });
       body.append(chars);
     }
-    body.append(mk("p", "dlg-note", "相手の表にだけ入っている話・あなただけが入れた話は、この比べには含まれません。"));
   }
 
   async function loadCompareFile(file) {
@@ -2068,16 +2078,22 @@
     if (c.agreement !== null) card(pct(c.agreement), "評価の近さ");
     if (c.charSim !== null) card(pct(c.charSim), "推しキャラの近さ");
     sheet.append(cards);
-    if (c.agreement === null) return void sheet.append(mk("p", "xs-empty", `共通のエピソードが${MIN_COUNT_FOR_BIAS}話以上あると、評価の近さなどを表示します。`));
-    const eps = (title, items, empty) => {
+    const eps = (title, items, empty, chipsOf) => {
       sheet.append(mk("h3", "xs-section", `${title} Top${n}`));
       if (!items.length) sheet.append(mk("p", "xs-empty", empty));
       const row = mk("div", "xc-eps");
-      items.slice(0, n).forEach((x) => row.append(imageThumb(BY_NO.get(x.no), [[`あなた ${lineOf(x.a.tier.name)}`, x.a.tier], [`相手 ${lineOf(x.b.tier.name)}`, x.b.tier]])));
+      items.slice(0, n).forEach((x) => row.append(imageThumb(BY_NO.get(x.no), chipsOf(x))));
       sheet.append(row);
     };
-    eps("二人とも上位に入れた話", c.both, "二人とも上位の行に入れた話は、まだありません。");
-    eps("評価が分かれた話", c.split, "大きく評価が分かれた話は、ありません。");
+    if (c.agreement === null) sheet.append(mk("p", "xs-empty", `共通のエピソードが${MIN_COUNT_FOR_BIAS}話以上あると、評価の近さなどを表示します。`));
+    else {
+      const bothChips = (x) => [[`あなた ${lineOf(x.a.tier.name)}`, x.a.tier], [`相手 ${lineOf(x.b.tier.name)}`, x.b.tier]];
+      eps("二人とも上位に入れた話", c.both, "二人とも上位の行に入れた話は、まだありません。", bothChips);
+      eps("評価が分かれた話", c.split, "大きく評価が分かれた話は、ありません。", bothChips);
+    }
+    eps("あなただけが評価した話", c.mineOnly, "相手の表に入っていない話は、ありません。", (x) => [[`あなた ${lineOf(x.side.tier.name)}`, x.side.tier]]);
+    eps("相手だけが評価した話", c.theirOnly, "あなたの表に入っていない話は、ありません。", (x) => [[`相手 ${lineOf(x.side.tier.name)}`, x.side.tier]]);
+    if (c.agreement === null) return;
     sheet.append(mk("h3", "xs-section", `二人とも推していそうなキャラ Top${n}`));
     const chars = mk("div", "cmp-chars");
     c.common.slice(0, n).forEach((x) => {
@@ -2103,7 +2119,8 @@
     const summary = statsContext(tab).placed.length ? $("statsSummary").textContent.split("「出番の○倍」の表示は")[0].replace("を集計しています。", "") : "";
     const settings = statsConditions(tab).split(" ／ ").filter(Boolean);
     const notes = mk("div", "xs-notes");
-    [[summary, ...settings].filter(Boolean).join("　／　"), sheet.querySelector(".lift") ? LEGEND_LIFT : "", sheet.querySelector(".stat-score") ? LEGEND_ABOVE : ""]
+    const compareNote = tab === "compare" ? "「だけが評価した話」＝もう一方の表に入っていない話（低く評価している、とは別）" : "";
+    [[summary, ...settings].filter(Boolean).join("　／　"), sheet.querySelector(".lift") ? LEGEND_LIFT : "", sheet.querySelector(".stat-score") ? LEGEND_ABOVE : "", compareNote]
       .filter(Boolean)
       .forEach((line) => notes.append(mk("p", "", line)));
     if (notes.children.length) sheet.append(notes);

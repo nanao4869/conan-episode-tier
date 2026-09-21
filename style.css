@@ -517,3 +517,11 @@ body.viewing .list-title:hover { background: none; }
   .tool-card img { width: 100%; }
   .tool-card-body { padding: 12px 14px 14px; }
 }
+
+/* ---------- X post choices ---------- */
+.post-opt { display: block; width: 100%; margin-top: 10px; padding: 12px 14px; text-align: left; border: 1px solid var(--line2); border-radius: 10px; background: var(--panel2); color: var(--text); cursor: pointer; }
+.post-opt:hover:not(:disabled) { border-color: #4a86d8; background: #2c2c35; }
+.post-opt:disabled { opacity: .55; cursor: default; }
+.post-opt strong { display: block; font-size: 15px; }
+.post-opt span { display: block; margin-top: 2px; font-size: 13px; color: var(--muted); }
+.post-opt small { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }

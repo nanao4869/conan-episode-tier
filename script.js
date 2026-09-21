@@ -1173,7 +1173,32 @@
     if (dataUrl) downloadImage(dataUrl, format);
   });
 
-  postXBtn.addEventListener("click", async () => {
+  // Two ways to post, so the long board link never comes as a surprise: introduce the site (plain URL), or post the board (link with its contents).
+  const SITE_TEXT = "名探偵コナンの好きなエピソードでTier表が作れるツールです！ #コナンエピソードTier表 #名探偵コナン";
+  const postDlg = $("postDialog");
+  const openIntent = (text, url) => {
+    let u = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    if (url) u += `&url=${encodeURIComponent(url)}`;
+    window.open(u, "_blank", "noopener"); // called straight from a click, so popup blockers allow it
+  };
+
+  postXBtn.addEventListener("click", () => {
+    const empty = !placedEpisodes(true).length;
+    $("postBoardBtn").disabled = empty;
+    $("postBoardNote").textContent = empty
+      ? "表にエピソードを入れると、選べます。"
+      : "投稿欄には長いリンクが入りますが、Xに投稿すると、通常は短く表示されます。表の画像は、「画像として保存」で保存して、添付してください。";
+    postDlg.showModal();
+  });
+
+  $("postSiteBtn").addEventListener("click", () => {
+    postDlg.close();
+    openIntent(SITE_TEXT, pageUrl());
+    toast("Xの投稿画面を開きました");
+  });
+
+  $("postBoardBtn").addEventListener("click", async () => {
+    postDlg.close();
     if (canShareFiles()) {
       const dataUrl = await renderImage(postXBtn, POST_IDLE, "png");
       if (!dataUrl) return;
@@ -1189,13 +1214,9 @@
         }
       }
     }
-    // The image is never saved or attached automatically. Opening happens right in the click, so popup blockers allow it.
-    // The link carries the board, so whoever opens it can compare with their own. Built ahead of time (shareLinkNow is
-    // instant when the cache is fresh) so that window.open still happens inside the click and isn't blocked.
-    const shareUrl = (await shareLinkNow()) || pageUrl();
-    let url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}`;
-    if (shareUrl) url += `&url=${encodeURIComponent(shareUrl)}`;
-    window.open(url, "_blank", "noopener");
+    // The image is never saved or attached automatically. The link is prebuilt (shareLinkNow is instant when the cache
+    // is fresh), so window.open still happens inside the click.
+    openIntent(SHARE_TEXT, (await shareLinkNow()) || pageUrl());
     toast("Xの投稿画面を開きました。画像は「画像として保存」で保存して添付してください");
   });
 

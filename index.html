@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.3.0">
+<link rel="stylesheet" href="style.css?v=1.4.0">
 </head>
 <body data-mode="title">
 
@@ -132,7 +132,7 @@
   <p>マンガの事件の情報・サムネイル画像は、少年サンデー公式サイト「名探偵コナン 全事件レポート編纂室」（websunday.net）の掲載内容を利用しています。</p>
   <p>アニメオリジナルの情報・サムネイル画像は、読売テレビ「名探偵コナン 事件ファイル」（ytv.co.jp）の掲載内容を利用し、前編・後編などは1つにまとめています。アニメオリジナルかどうかとシーズンの区分は、Wikipedia「名探偵コナンのアニメエピソード一覧」を、マンガとアニメの対応は同「名探偵コナンの漫画エピソード一覧」を参考にしています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.3.0</p>
+  <p class="version">Ver 1.4.0</p>
 </footer>
 
 <!-- エピソード詳細 -->
@@ -333,10 +333,27 @@
   </div>
 </dialog>
 
+<!-- Xに投稿: 2 choices, so the long board link never comes as a surprise -->
+<dialog id="postDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">Xに投稿</h3>
+    <button type="button" class="post-opt" id="postSiteBtn">
+      <strong>このサイトを紹介する</strong>
+      <span>このツールのURLだけを投稿します。</span>
+    </button>
+    <button type="button" class="post-opt" id="postBoardBtn">
+      <strong>作った表を投稿する</strong>
+      <span>表の中身が入ったリンクを付けて投稿します。リンクを開いた人は、あなたの表を見たり、自分の表とくらべたりできます。</span>
+      <small id="postBoardNote">投稿欄には長いリンクが入りますが、Xに投稿すると、通常は短く表示されます。表の画像は、「画像として保存」で保存して、添付してください。</small>
+    </button>
+  </div>
+</dialog>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.3.0"></script>
-<script src="script.js?v=1.3.0"></script>
+<script src="data/episodes.js?v=1.4.0"></script>
+<script src="script.js?v=1.4.0"></script>
 </body>
 </html>

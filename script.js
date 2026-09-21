@@ -2355,6 +2355,14 @@
 
   /* ------------------------------------------------------------------- boot */
 
+  // on narrow screens, the rarely used buttons (reset / export / import) live at the bottom of the page
+  const dataTools = $("dataTools");
+  const dataToolsHome = dataTools.parentNode;
+  const narrowMq = matchMedia("(max-width: 899px)");
+  const placeDataTools = () => ($("dataToolsSlot") && narrowMq.matches ? $("dataToolsSlot") : dataToolsHome).appendChild(dataTools);
+  placeDataTools();
+  narrowMq.addEventListener("change", placeDataTools);
+
   titleEl.textContent = state.title;
   syncModeRadios();
   render();

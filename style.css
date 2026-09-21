@@ -494,6 +494,8 @@ dialog.dlg-stats { width: min(94vw, 680px); }
 .view-banner[hidden] { display: none; }
 body.viewing .pool,
 body.viewing .board-actions,
+body.viewing .data-tools,
+body.viewing .data-tools-slot,
 body.viewing .toolbar-actions,
 body.viewing #statsBtn,
 body.viewing .tier-tools { display: none; }
@@ -519,9 +521,27 @@ body.viewing .list-title:hover { background: none; }
   .tool-card-body { padding: 8px 12px 8px 0; gap: 2px; font-size: 12px; }
   .tool-card-body strong { font-size: 14px; }
 }
-/* the episode list is exactly 5 columns wide on phones (the tile size follows the screen width) */
+/* phones: the episode list is exactly 5 columns wide (the tile size follows the screen width) and about 4 rows tall.
+   Captions are dropped in the list so that more tiles fit; the episode number stays on the tile. */
 @media (max-width: 520px) {
-  .pool-grid { --tile: calc((100vw - 16px) / 5 - 1px); }
+  .pool { height: auto; max-height: 62vh; max-height: 62dvh; }
+  .pool-grid {
+    --tile: calc((100vw - 16px) / 5 - 1px); --item-h: var(--tile);
+    max-height: calc(var(--tile) * 4.25 + 16px);
+  }
+  body .pool-grid .item .cap { display: none; }
+  body .pool-grid .item .badge {
+    display: block; position: absolute; left: 0; top: auto; bottom: 0; padding: 0 4px;
+    background: rgba(0, 0, 0, .78); color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; border-top-right-radius: 4px;
+  }
+  .toast { bottom: calc(50dvh + 16px); }
+}
+
+/* narrow layout: reset / export / import are moved to the bottom of the page (see script.js) */
+.data-tools-slot { display: none; }
+@media (max-width: 899px) {
+  .data-tools-slot { display: block; max-width: 720px; margin: 28px auto 0; padding: 0 16px; }
+  .data-tools-slot h2 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--muted); }
 }
 
 /* ---------- X post choices ---------- */

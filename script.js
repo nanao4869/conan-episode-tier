@@ -243,24 +243,20 @@
     const cap = document.createElement("span");
     cap.className = "cap";
     cap.textContent = ep.title;
-    const memo = document.createElement("span");
-    memo.className = "memo-dot no-export";
-    memo.title = "メモがあります";
-    d.append(img, badge, cap, memo);
+    d.append(img, badge, cap);
     itemCache.set(ep.no, d);
     refreshItemEl(ep, d);
     return d;
   }
 
-  // Refreshes the parts of a tile that depend on the サムネイル switch and on whether a memo is saved,
-  // both of which can change after the tile was first built (itemEl() only builds each tile once).
+  // Refreshes the parts of a tile that depend on the サムネイル switch, which can change after the
+  // tile was first built (itemEl() only builds each tile once).
   function refreshItemEl(ep, d = itemCache.get(ep.no)) {
     if (!d) return;
     d.classList.toggle("is-anime", showsAnime(ep));
     d.title = `${showsAnime(ep) ? "" : "No."}${labelOf(ep)} ${ep.title}`;
     d.firstChild.src = thumbOf(ep);
     d.querySelector(".badge").textContent = labelOf(ep);
-    d.classList.toggle("has-memo", hasNote(ep.no));
   }
   function refreshAllItems() {
     for (const [no, d] of itemCache) refreshItemEl(BY_NO.get(no), d);
@@ -411,6 +407,89 @@
     renderPool();
   });
 
+  // メモで絞り込み: a filter like the others (reuses the same "found" outline for placed episodes) instead of
+  // a badge on every tile, which the user found made tiles look cluttered. Cycles off -> has -> none -> off.
+  let memoFilter = "off";
+  const MEMO_FILTER_LABEL = { off: "メモで絞り込み", has: "メモがある話", none: "メモがない話" };
+  const memoFilterBtn = $("memoFilterBtn");
+  memoFilterBtn.addEventListener("click", () => {
+    memoFilter = memoFilter === "off" ? "has" : memoFilter === "has" ? "none" : "off";
+    memoFilterBtn.textContent = MEMO_FILTER_LABEL[memoFilter];
+    memoFilterBtn.classList.toggle("is-active", memoFilter !== "off");
+    renderPool();
+  });
+
+  // メモ一覧: every memo in one place (board order top to bottom, then 未分類), so the user can read them
+  // the way they read their spreadsheet instead of opening each episode's detail one at a time.
+  const memoListDlg = $("memoListDialog");
+  let memoSort = "board";
+  function renderMemoList() {
+    const notes = state.notes || {};
+    const filterVal = $("memoFilterSel").value; // "has" | "none" | "all"
+    const passesFilter = (no) => (filterVal === "all" ? true : filterVal === "has" ? !!notes[no] : !notes[no]);
+    const rows = []; // { no, tier: tier-object-or-null }
+    const placed = new Set();
+    state.tiers.forEach((t) => t.items.forEach((no) => {
+      placed.add(no); // placed either way, so the pool loop below never lists it twice
+      if (passesFilter(no)) rows.push({ no, tier: t });
+    }));
+    EPISODES.filter((e) => !placed.has(e.no) && passesFilter(e.no)).forEach((e) => rows.push({ no: e.no, tier: null }));
+    // "表の並び順" is already board order (rows built above); the other two just re-sort by episode number
+    // (manga cases 1-333, anime originals 1000+, so this keeps manga first then anime within each direction).
+    if (memoSort === "epAsc") rows.sort((a, b) => a.no - b.no);
+    else if (memoSort === "epDesc") rows.sort((a, b) => b.no - a.no);
+
+    const withMemo = rows.filter((r) => notes[r.no]).length;
+    $("memoListCount").textContent = !rows.length ? "該当する話がありません" : filterVal === "all" ? `${rows.length}件（メモあり ${withMemo}件）` : `${rows.length}件`;
+    const list = $("memoList");
+    list.replaceChildren();
+    rows.forEach(({ no, tier }) => {
+      const ep = BY_NO.get(no);
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "memo-row";
+      const img = new Image();
+      img.src = thumbOf(ep);
+      img.alt = "";
+      img.loading = "lazy";
+      const body = document.createElement("div");
+      body.className = "memo-row-body";
+      const head = document.createElement("div");
+      head.className = "memo-row-head";
+      const title = document.createElement("span");
+      title.className = "memo-row-title";
+      title.textContent = `${labelOf(ep)} ${ep.title}`;
+      const tag = document.createElement("span");
+      tag.className = "memo-row-tier";
+      if (tier) {
+        tag.textContent = tier.name.replace(/\n/g, " ").trim() || "　";
+        tag.style.background = tier.color;
+        tag.style.color = textColorFor(tier.color);
+      } else {
+        tag.textContent = "未分類";
+        tag.classList.add("is-pool");
+      }
+      head.append(title, tag);
+      const text = document.createElement("p");
+      text.className = "memo-row-text";
+      if (notes[no]) text.textContent = notes[no];
+      else { text.textContent = "（メモなし）"; text.classList.add("is-empty"); }
+      body.append(head, text);
+      row.append(img, body);
+      row.addEventListener("click", () => openDetail(no)); // opens on top of this dialog; closing it comes back here
+      list.append(row);
+    });
+  }
+  $("memoListBtn").addEventListener("click", () => {
+    renderMemoList();
+    memoListDlg.showModal();
+  });
+  $("memoSort").addEventListener("change", () => {
+    memoSort = $("memoSort").value;
+    renderMemoList();
+  });
+  $("memoFilterSel").addEventListener("change", renderMemoList);
+
   // Placed tiles that match the current filters are outlined on the board, and this button walks through them.
   const foundBtn = $("foundBtn");
   let foundNos = [];
@@ -433,7 +512,7 @@
     const kind = kindEl.value;
     const year = yearEl.value;
     const chars = [...selectedChars];
-    const filtering = q || vol || kind || year || chars.length;
+    const filtering = q || vol || kind || year || chars.length || memoFilter !== "off";
     const passes = (ep) => {
       if (kind) {
         if (kind === "anime" ? !isAnime(ep) : isAnime(ep)) return false; // the other kinds are all manga
@@ -444,6 +523,8 @@
       if (vol && volumeOf(ep) !== vol) return false;
       if (q && !HAYSTACK.get(ep.no).includes(q)) return false;
       if (chars.length && !matchChars(ep, chars)) return false;
+      if (memoFilter === "has" && !hasNote(ep.no)) return false;
+      if (memoFilter === "none" && hasNote(ep.no)) return false;
       return true;
     };
     const frag = document.createDocumentFragment();
@@ -667,6 +748,12 @@
   const detailDlg = $("detailDialog");
   const tierDlg = $("tierDialog");
 
+  // The detail dialog can be opened from the メモ一覧 list, stacked on top of it (native <dialog> supports
+  // this); closing it comes back to the list, refreshed in case the memo text or the row it's in changed.
+  detailDlg.addEventListener("close", () => {
+    if (memoListDlg.open) renderMemoList();
+  });
+
   // The dialog opens on pointerup; the click that follows the same tap must not count as a backdrop click.
   let dlgOpenedAt = 0;
   document.querySelectorAll("dialog").forEach((dlg) => {
@@ -817,7 +904,7 @@
       if (val.trim()) state.notes[no] = val.slice(0, NOTE_MAX);
       else delete state.notes[no];
       save();
-      refreshItemEl(BY_NO.get(no));
+      renderPool(); // the メモがある話 filter/highlight needs to catch up if it's on
     }, 400);
   });
 

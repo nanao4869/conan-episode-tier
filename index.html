@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.7.0">
+<link rel="stylesheet" href="style.css?v=1.8.0">
 </head>
 <body data-mode="title">
 
@@ -119,6 +119,8 @@
         </div>
         <div class="pool-char-row">
           <button type="button" class="btn btn-ghost btn-sm" id="charBtn">キャラで絞り込み</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="memoFilterBtn" title="クリックで「メモがある話」→「メモがない話」→解除、と切り替わります（表に配置済みのものは、枠で囲んで示します）">メモで絞り込み</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="memoListBtn" title="書いたメモを一覧でまとめて確認できます">メモ一覧</button>
           <div id="charChips" class="char-chips"></div>
           <button type="button" class="btn btn-ghost btn-sm" id="sortBtn" title="マンガとアニメはそれぞれ、番号順を逆にします">並び：古い順</button>
         </div>
@@ -133,6 +135,13 @@
 
 <section class="other-tools" aria-label="他のツール">
   <h2>他のツール</h2>
+  <a class="tool-card" href="opening.html">
+    <img src="og-image.png" alt="" width="240" height="126" loading="lazy">
+    <span class="tool-card-body">
+      <strong>コナン 主題歌Tier表メーカー <em>べーた</em></strong>
+      <span>歴代OP・ED主題歌133曲を、動画を見ながらTier表に並べられます。</span>
+    </span>
+  </a>
   <a class="tool-card" href="https://nanao4869.github.io/conan-profile-card/">
     <img src="https://nanao4869.github.io/conan-profile-card/og-image.png" alt="" width="240" height="126" loading="lazy">
     <span class="tool-card-body">
@@ -146,7 +155,7 @@
   <p>マンガの事件の情報・サムネイル画像は、少年サンデー公式サイト「名探偵コナン 全事件レポート編纂室」（websunday.net）の掲載内容を利用しています。</p>
   <p>アニメオリジナルの情報・サムネイル画像は、読売テレビ「名探偵コナン 事件ファイル」（ytv.co.jp）の掲載内容を利用し、前編・後編などは1つにまとめています。アニメオリジナルかどうかとシーズンの区分は、Wikipedia「名探偵コナンのアニメエピソード一覧」を、マンガとアニメの対応は同「名探偵コナンの漫画エピソード一覧」を参考にしています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.7.0</p>
+  <p class="version">Ver 1.8.0</p>
 </footer>
 
 <!-- エピソード詳細 -->
@@ -193,6 +202,32 @@
       <button type="button" class="btn btn-ghost btn-danger" id="tDelete">この行を削除</button>
     </div>
     <button type="button" class="btn btn-primary dlg-done" data-close>閉じる</button>
+  </div>
+</dialog>
+
+<!-- メモ一覧 -->
+<dialog id="memoListDialog" class="dlg-wide dlg-memo">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">メモ一覧</h3>
+    <div class="memo-list-head">
+      <p class="dlg-note" id="memoListCount"></p>
+      <label class="memo-sort">メモ
+        <select id="memoFilterSel">
+          <option value="has">がある話のみ</option>
+          <option value="none">がない話のみ</option>
+          <option value="all">すべて</option>
+        </select>
+      </label>
+      <label class="memo-sort">並び替え
+        <select id="memoSort">
+          <option value="board">表の並び順</option>
+          <option value="epAsc">話数が古い順</option>
+          <option value="epDesc">話数が新しい順</option>
+        </select>
+      </label>
+    </div>
+    <div class="memo-list" id="memoList"></div>
   </div>
 </dialog>
 
@@ -372,7 +407,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.7.0"></script>
-<script src="script.js?v=1.7.0"></script>
+<script src="data/episodes.js?v=1.8.0"></script>
+<script src="script.js?v=1.8.0"></script>
 </body>
 </html>

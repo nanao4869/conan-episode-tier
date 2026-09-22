@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>コナン 主題歌Tier表メーカー（べーた）</title>
+<meta name="description" content="名探偵コナンの歴代OP・ED主題歌をTier表にして画像で保存できるツールです。動画を見ながら操作できます。">
+<meta name="theme-color" content="#0d1a3a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="コナン 主題歌Tier表メーカー">
+<meta property="og:title" content="名探偵コナン 主題歌Tier表メーカー（べーた）">
+<meta property="og:description" content="名探偵コナンの歴代OP・ED主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
+<meta property="og:url" content="https://nanao4869.github.io/conan-episode-tier/opening.html">
+<meta property="og:image" content="https://nanao4869.github.io/conan-episode-tier/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="名探偵コナン 主題歌Tier表メーカー（べーた）">
+<meta name="twitter:description" content="名探偵コナンの歴代OP・ED主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
+<meta name="twitter:image" content="https://nanao4869.github.io/conan-episode-tier/og-image.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1a3a'/%3E%3Crect x='10' y='12' width='14' height='10' fill='%23ff7f7f'/%3E%3Crect x='10' y='27' width='14' height='10' fill='%23ffdf7f'/%3E%3Crect x='10' y='42' width='14' height='10' fill='%237fff7f'/%3E%3Crect x='28' y='12' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='27' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='42' width='26' height='10' fill='%23555'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=1.8.0">
+</head>
+<body class="op-page">
+
+<header class="site-header">
+  <h1>名探偵コナン 主題歌Tier表メーカー <span class="beta">べーた</span></h1>
+</header>
+
+<main class="page">
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+    </div>
+    <div class="toolbar-actions">
+      <div class="seg" role="radiogroup" aria-label="保存する画像の形式">
+        <span class="seg-label">形式</span>
+        <label><input type="radio" name="format" value="png" checked><span>PNG</span></label>
+        <label><input type="radio" name="format" value="jpeg"><span>JPEG</span></label>
+      </div>
+      <button type="button" class="btn btn-primary" id="saveBtn">画像として保存（PNG）</button>
+      <button type="button" class="btn btn-x" id="postXBtn">Xに投稿</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+
+    <section class="board-col">
+      <div id="board" class="board">
+        <div id="listTitle" class="list-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Tier表のタイトル" data-placeholder="タイトルを入力"></div>
+        <div id="tiers" class="tiers"></div>
+        <div class="board-credit">名探偵コナン 主題歌Tier表メーカー ©青山剛昌／小学館</div>
+      </div>
+
+      <div class="board-actions">
+        <button type="button" class="btn btn-ghost" id="undoBtn" disabled title="1つ前の状態に戻します（Ctrl+Z）">↶ 元に戻す</button>
+        <button type="button" class="btn btn-ghost" id="redoBtn" disabled title="元に戻した操作をやり直します（Ctrl+Y）">↷ やり直す</button>
+        <button type="button" class="btn btn-ghost" id="addRowBtn">＋ 行を追加</button>
+      </div>
+      <div id="dataTools" class="data-tools">
+        <div class="board-actions">
+        <button type="button" class="btn btn-ghost" id="clearAllBtn">全て未分類に戻す</button>
+        <button type="button" class="btn btn-ghost btn-danger" id="resetBtn">初期状態に戻す</button>
+        </div>
+      <div class="board-actions data-actions">
+        <button type="button" class="btn btn-ghost" id="exportBtn" title="今のTier表をJSONファイルとして保存します（バックアップ・他の端末への引き継ぎ用）">エクスポート（JSON）</button>
+        <button type="button" class="btn btn-ghost" id="importBtn" title="エクスポートしたJSONファイルから、Tier表を復元します">インポート</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+        <span class="data-hint">バックアップや、他の端末への引き継ぎに使えます</span>
+      </div>
+      </div>
+    </section>
+
+    <aside id="pool" class="pool" aria-label="未分類の主題歌">
+      <div class="yt-wrap"><div id="ytPlayer"></div></div>
+      <p class="yt-caption" id="ytCaption">再生中の曲はありません</p>
+      <div class="pool-head">
+        <div class="pool-title">
+          <h2>主題歌</h2>
+          <span id="poolCount" class="pool-count"></span>
+          <button type="button" class="btn btn-ghost btn-sm" id="sortBtn" title="放送順／逆順を切り替えます" style="margin-left:auto">並び：放送順</button>
+        </div>
+        <div class="pool-filters">
+          <select id="artistFilter" aria-label="アーティストで絞り込み"><option value="">すべてのアーティスト</option></select>
+        </div>
+      </div>
+      <div id="poolGrid" class="pool-grid"></div>
+    </aside>
+
+  </div>
+</main>
+
+<section id="dataToolsSlot" class="data-tools-slot" aria-label="データの管理・リセット"><h2>データの管理・リセット</h2></section>
+
+<section class="other-tools" aria-label="他のツール">
+  <h2>他のツール</h2>
+  <a class="tool-card" href="https://nanao4869.github.io/conan-episode-tier/">
+    <img src="og-image.png" alt="" width="240" height="126" loading="lazy">
+    <span class="tool-card-body">
+      <strong>コナン エピソードTier表メーカー <em>べーた</em></strong>
+      <span>マンガ333事件＋アニメオリジナル471話から、好きなエピソードのTier表が作れます。</span>
+    </span>
+  </a>
+  <a class="tool-card" href="https://nanao4869.github.io/conan-profile-card/">
+    <img src="https://nanao4869.github.io/conan-profile-card/og-image.png" alt="" width="240" height="126" loading="lazy">
+    <span class="tool-card-body">
+      <strong>コナン自己紹介カードメーカー <em>べーた</em></strong>
+      <span>名探偵コナンの自己紹介カードを作って、画像で保存・Xに投稿できます。</span>
+    </span>
+  </a>
+</section>
+
+<footer class="site-footer">
+  <p>動画の埋め込みはYouTubeの公式プレーヤーを利用しており、音源・映像はYouTube上のものをそのまま再生しています。</p>
+  <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
+  <p class="version">Ver 1.0.0</p>
+</footer>
+
+<!-- 主題歌詳細 -->
+<dialog id="detailDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <p class="detail-no" id="dNo"></p>
+    <h3 class="detail-title" id="dTitle"></h3>
+    <p class="detail-file" id="dFile"></p>
+    <p class="detail-file" id="dPeriod" hidden></p>
+    <button type="button" class="btn btn-primary" id="dPlayBtn">▶ この曲を再生</button>
+    <p class="dlg-label">Tierに入れる</p>
+    <div class="chips" id="dChips"></div>
+  </div>
+</dialog>
+
+<!-- 行の編集 -->
+<dialog id="tierDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">行の設定</h3>
+    <label class="dlg-label" for="tName">ラベルの名前</label>
+    <textarea id="tName" rows="2" maxlength="40"></textarea>
+    <p class="dlg-note tier-note">改行すると2行で表示されます（例：1行目に S、2行目に 最高）</p>
+    <p class="dlg-label">ラベルの色</p>
+    <div class="swatches" id="tSwatches"></div>
+    <label class="custom-color">好きな色にする <input type="color" id="tColor"></label>
+    <div class="dlg-grid">
+      <button type="button" class="btn btn-ghost" id="tAddAbove">上に行を追加</button>
+      <button type="button" class="btn btn-ghost" id="tAddBelow">下に行を追加</button>
+      <button type="button" class="btn btn-ghost" id="tClear">この行を空にする</button>
+      <button type="button" class="btn btn-ghost btn-danger" id="tDelete">この行を削除</button>
+    </div>
+    <button type="button" class="btn btn-primary dlg-done" data-close>閉じる</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
+<script src="data/openings.js?v=1.0.0"></script>
+<script src="opening.js?v=1.0.0"></script>
+</body>
+</html>

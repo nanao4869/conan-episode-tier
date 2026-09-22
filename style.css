@@ -137,11 +137,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .item:focus-visible { outline: 2px solid #fff; z-index: 1; }
 .item img { display: block; width: 100%; height: calc(var(--tile) - 2px); object-fit: cover; background: #222; pointer-events: none; -webkit-user-drag: none; }
 .item .badge, .item .cap { display: none; }
-.item .memo-dot { display: none; }
-.item.has-memo .memo-dot {
-  display: block; position: absolute; top: 2px; right: 2px; width: 10px; height: 10px;
-  border-radius: 50%; background: #ffd54a; border: 1px solid rgba(0, 0, 0, .5); z-index: 1;
-}
 body[data-mode="badge"] .item .badge,
 body[data-mode="title"] .item .badge {
   display: block; position: absolute; left: 0; bottom: 0; padding: 0 4px;
@@ -163,6 +158,37 @@ body.mv-page .item .badge { top: calc(var(--tile) * .667 - 2px - 16px); }
 @media (max-width: 520px) {
   body.mv-page .pool-grid { --tile: calc((100vw - 16px) / 3 - 1px); }
 }
+
+/* ---------- opening/ending theme song tier page (no official art, so each tile is a plain color card) ---------- */
+body.op-page { --tile: 112px; --item-h: 96px; } /* width and height are independent here (unlike the other pages) so the card can be narrow (fits 3 per row) without shrinking the text */
+body.op-page .item { border: 0; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0, 0, 0, .4); }
+body.op-page .item .badge, body.op-page .item .cap, body.op-page .item img { display: none; }
+body.op-page .item .op-art {
+  position: relative; width: 100%; height: var(--item-h); box-sizing: border-box; display: flex; flex-direction: column;
+  justify-content: center; text-align: left; gap: 4px; padding: 6px 6px 6px 13px; overflow: hidden;
+  font-family: var(--font-system); /* the site's rounded display font gets mushy at this size; a plain sans-serif reads better */
+}
+/* accent bar along the left edge */
+body.op-page .item .op-art::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: 5px; background: rgba(0, 0, 0, .4); pointer-events: none;
+}
+body.op-page .item .op-artist {
+  position: relative; font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; opacity: .85;
+}
+body.op-page .item .op-title { position: relative; font-size: 13px; font-weight: 800; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+body.op-page .item .op-play {
+  position: absolute; top: 4px; right: 4px; width: 28px; height: 28px; border-radius: 50%; border: 0;
+  background: rgba(0, 0, 0, .4); color: #fff; font-size: 13px; line-height: 1; cursor: pointer; display: grid; place-items: center;
+  backdrop-filter: blur(2px);
+}
+body.op-page .item .op-play:hover { background: rgba(0, 0, 0, .7); }
+body.op-page .item.op-playing { outline: 3px solid #ffd54a; outline-offset: -1px; }
+@media (max-width: 520px) {
+  body.op-page .pool-grid { --tile: calc((100vw - 16px) / 4 - 1px); }
+}
+.yt-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.yt-wrap iframe, .yt-wrap > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.yt-caption { margin: 6px 12px 0; font-size: 12px; color: var(--muted); text-align: center; }
 
 .ghost {
   position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; opacity: .92;
@@ -246,6 +272,9 @@ textarea#tName, textarea#dMemo {
 /* ---------- image export (rendered off-screen at a fixed desktop layout) ---------- */
 .export-stage { font-family: var(--font-system); position: fixed; left: -12000px; top: 0; width: 1000px; pointer-events: none; }
 .board.exporting { --tile: 80px; --label-w: 100px; --fs: 1; width: 1000px; border: 0; border-radius: 0; padding: 16px; }
+/* op-page's board tiles are already a fixed size regardless of device (only the pool shrinks on mobile),
+   so unlike the other two apps, this page doesn't want the shared 80px export reset above - keep it square. */
+body.op-page .board.exporting { --tile: 112px; }
 .board.exporting .list-title { pointer-events: none; }
 .board.exporting .list-title:empty { display: none; }
 .board.exporting .list-title:hover { background: none; }
@@ -275,7 +304,7 @@ textarea#tName, textarea#dMemo {
 /* ---------- character filter ---------- */
 .btn-sm { padding: 5px 10px; font-size: 13px; white-space: nowrap; flex: 0 0 auto; }
 .btn-sm.is-active { background: var(--blue); border-color: var(--blue); color: #fff; }
-.pool-char-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.pool-char-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; row-gap: 6px; margin-top: 8px; }
 .char-chips { display: flex; gap: 6px; overflow-x: auto; flex: 1 1 auto; min-width: 0; scrollbar-width: thin; padding-bottom: 2px; }
 .char-chip {
   appearance: none; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px;
@@ -291,6 +320,25 @@ textarea#tName, textarea#dMemo {
 
 dialog.dlg-wide { width: min(94vw, 600px); }
 .dlg-note { margin: -6px 0 10px; font-size: 12px; color: var(--muted); }
+
+/* ---------- memo list ---------- */
+dialog.dlg-memo { width: min(94vw, 820px); max-height: 94vh; }
+.memo-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.memo-sort { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.memo-sort select { padding: 4px 6px; border-radius: 6px; border: 1px solid var(--line2); background: #121216; color: var(--text); font-size: 12px; }
+.memo-list { display: grid; gap: 10px; max-height: 78vh; overflow-y: auto; }
+.memo-row {
+  display: grid; grid-template-columns: 72px 1fr; gap: 12px; padding: 10px; border: 0; border-radius: 10px;
+  background: #2a2a33; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.memo-row:hover { background: #303039; }
+.memo-row img { width: 72px; height: 72px; object-fit: cover; border-radius: 6px; background: #222; }
+.memo-row-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.memo-row-title { font-size: 14px; font-weight: 700; }
+.memo-row-tier { flex: 0 0 auto; padding: 1px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+.memo-row-tier.is-pool { background: #3a3a44; color: #fff; }
+.memo-row-text { margin: 5px 0 0; font-size: 13px; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+.memo-row-text.is-empty { color: var(--muted); font-style: italic; }
 .seg-dlg { display: flex; }
 .seg-dlg label { flex: 1 1 0; }
 .seg-dlg span:not(.seg-label) { text-align: center; border-left: 0; }
@@ -355,7 +403,6 @@ a.an-title:hover { color: #7db8ff; }
 .found-btn:hover { background: rgba(255, 213, 74, .3); }
 .found-btn[hidden] { display: none; }
 .pool-title { flex-wrap: wrap; row-gap: 4px; }
-#sortBtn { margin-left: auto; }
 
 /* ---------- character stats ---------- */
 .stats-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 10px 0 4px; }

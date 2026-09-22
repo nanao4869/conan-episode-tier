@@ -1,6 +1,8 @@
 // Tiny local static server so the app can be used from http://localhost instead of file://.
 // Browsers block reading the bundled thumbnails when index.html is opened by double-click,
-// which makes "save as PNG" fail. Usage: node serve.mjs [--no-open]
+// which makes "save as PNG" fail. Usage: node serve.mjs [--no-open] [page.html]
+// The optional page argument picks which page to open (defaults to index.html - the episode Tier maker);
+// serves every page either way, so http://localhost:8123/movie.html or /opening.html always work too.
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -39,7 +41,8 @@ function listen(port, triesLeft) {
     process.exit(1);
   });
   server.listen(port, "127.0.0.1", () => {
-    const url = `http://localhost:${port}/`;
+    const page = process.argv.slice(2).find((a) => !a.startsWith("--")) || "";
+    const url = `http://localhost:${port}/${page}`;
     console.log(`Tier表メーカーを起動しました: ${url}`);
     console.log("終了するには、このウィンドウを閉じるか Ctrl+C を押してください。");
     if (!process.argv.includes("--no-open")) exec(`start "" "${url}"`);

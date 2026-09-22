@@ -16,7 +16,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as cheerio from "cheerio";
 import sharp from "sharp";
-import { ALIASES, NOT_ESTIMATED, detectCharacters } from "./character-aliases.mjs";
+import { ALIASES, NOT_ESTIMATED, FORCE_CAST, detectCharacters } from "./character-aliases.mjs";
 import { TAGS, tagsFor } from "./tag-rules.mjs";
 
 const TOOLS = path.dirname(fileURLToPath(import.meta.url));
@@ -322,9 +322,9 @@ async function cropBlackFrame(buf) {
 const exists = (p) => fs.existsSync(p) && fs.statSync(p).size > 0;
 const thumbPath = (img) => path.join(ROOT, img.replace(/^img\//, "img/t/").replace(/\.\w+$/, ".jpg"));
 
-async function fetchImages(manga, anime, chars) {
+async function fetchImages(manga, anime, chars, animeAdaptImages) {
   log("5/6 images");
-  let n = { manga: 0, anime: 0, chars: 0, tiles: 0 };
+  let n = { manga: 0, anime: 0, animeAdapt: 0, chars: 0, tiles: 0 };
   await pool(manga, async (m) => {
     const dest = path.join(ROOT, m.img);
     if (!exists(dest)) { fs.writeFileSync(dest, await getBuf(m.thumb.startsWith("http") ? m.thumb : WEB + m.thumb)); n.manga++; }
@@ -337,14 +337,18 @@ async function fetchImages(manga, anime, chars) {
     const dest = path.join(ROOT, a.img);
     if (!exists(dest)) { fs.writeFileSync(dest, await cropBlackFrame(await getBuf(YTV + a.thumbSrc))); n.anime++; }
   });
+  await pool(animeAdaptImages, async (a) => {
+    const dest = path.join(ROOT, a.img);
+    if (!exists(dest)) { fs.writeFileSync(dest, await cropBlackFrame(await getBuf(YTV + a.thumbSrc))); n.animeAdapt++; }
+  });
   // 180px square copies for the tiles (the app loads the full-size image only in the detail dialog)
-  for (const e of [...manga, ...anime]) {
+  for (const e of [...manga, ...anime, ...animeAdaptImages]) {
     const dest = thumbPath(e.img);
     if (exists(dest)) continue;
     await sharp(path.join(ROOT, e.img), { pages: 1 }).flatten({ background: "#222222" }).resize(180, 180, { fit: "cover", position: "centre" }).jpeg({ quality: 80, mozjpeg: true }).toFile(dest);
     n.tiles++;
   }
-  log(`   downloaded: manga ${n.manga}, anime ${n.anime}, character icons ${n.chars}; new tiles ${n.tiles}`);
+  log(`   downloaded: manga ${n.manga}, anime ${n.anime}, anime adaptations ${n.animeAdapt}, character icons ${n.chars}; new tiles ${n.tiles}`);
 }
 
 /* --------------------------------------------------------------------- main */
@@ -371,14 +375,27 @@ const animeGroups = groupEpisodes(airedList, (a, b) => isOriginal(a.ep) === isOr
 const count = new Map();
 const iconSrc = new Map();
 for (const m of mangaRaw) for (const c of m.chars) { count.set(c.name, (count.get(c.name) || 0) + 1); iconSrc.set(c.name, c.icon); }
-// anime originals have no official cast list: estimate it from the synopsis (see character-aliases.mjs)
-const animeNames = animeGroups.map((g) => [...detectCharacters(g.eps.map((e) => `${e.title} ${e.story}`).join(" "))].filter((n) => iconSrc.has(n)));
+// anime originals have no official cast list: estimate it from the synopsis (see character-aliases.mjs),
+// then apply any hand-checked correction for that episode (FORCE_CAST).
+const animeNames = animeGroups.map((g) => {
+  const found = detectCharacters(g.eps.map((e) => `${e.title} ${e.story}`).join(" "));
+  for (const fix of FORCE_CAST[g.eps[0].ep] || []) {
+    const name = fix.slice(1);
+    if (fix[0] === "+") found.add(name);
+    else found.delete(name);
+  }
+  return [...found].filter((n) => iconSrc.has(n));
+});
 for (const list of animeNames) for (const n of list) count.set(n, count.get(n) + 1);
 for (const n of Object.keys(ALIASES)) if (!iconSrc.has(n)) warn(`character-aliases.mjs has "${n}", which is not a character on websunday.net (renamed?)`);
 for (const n of iconSrc.keys()) if (!(n in ALIASES) && !NOT_ESTIMATED.includes(n)) warn(`no alias for the new character "${n}": add it to tools/character-aliases.mjs so anime episodes can match it`);
 const names = [...count.keys()].sort((a, b) => count.get(b) - count.get(a));
 const charId = new Map(names.map((n, i) => [n, i]));
 const CHARACTERS = names.map((n, i) => ({ id: i, name: n, icon: "img/chars/" + iconSrc.get(n).split("/").pop(), count: count.get(n), src: iconSrc.get(n) }));
+
+// Thumbnails for the anime version of a manga case (separate from the anime-original ones fetched above);
+// same img/anime/ folder, no collisions since an episode number is either an original or an adaptation, never both.
+const animeAdaptImages = [];
 
 const manga = mangaRaw.map((m) => {
   const tokens = wikiManga.get(m.no) || [];
@@ -393,7 +410,10 @@ const manga = mangaRaw.map((m) => {
   if (eps.length) {
     an = groupEpisodes(eps.map((e) => ytv.get(e))).map((g) => {
       const d = describe(g, seasonOf);
-      return { e: d.range, t: d.title, d: jpDate(d.date), u: d.url, ...(d.s ? { s: d.s } : {}), ...(d.s2 ? { s2: d.s2 } : {}) };
+      const first = g.eps[0];
+      const img = `img/anime/${String(first.ep).padStart(4, "0")}.jpg`;
+      animeAdaptImages.push({ img, thumbSrc: first.thumb });
+      return { e: d.range, t: d.title, d: jpDate(d.date), u: d.url, img, label: "A" + first.ep, ...(d.s ? { s: d.s } : {}), ...(d.s2 ? { s2: d.s2 } : {}) };
     });
   } else if (tokens.includes("番外")) an = [{ e: "番外編（通常の話数外の放送）" }];
   else an = [];
@@ -418,7 +438,7 @@ const anime = animeGroups.map((g, i) => {
   };
 });
 
-await fetchImages(manga, anime, CHARACTERS);
+await fetchImages(manga, anime, CHARACTERS, animeAdaptImages);
 
 log("6/6 writing data/episodes.js");
 const strip = ({ thumb, thumbSrc, ...rest }) => rest;

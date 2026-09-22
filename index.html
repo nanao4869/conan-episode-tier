@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.6.3">
+<link rel="stylesheet" href="style.css?v=1.7.0">
 </head>
 <body data-mode="title">
 
@@ -39,6 +39,11 @@
       <label><input type="radio" name="mode" value="image"><span>画像のみ</span></label>
       <label><input type="radio" name="mode" value="badge"><span>話数つき</span></label>
       <label><input type="radio" name="mode" value="title"><span>タイトルつき</span></label>
+    </div>
+    <div class="seg" role="radiogroup" aria-label="サムネイルの切り替え" title="アニメ化されている話は、アニメの場面写真と話数に切り替えられます">
+      <span class="seg-label">サムネイル</span>
+      <label><input type="radio" name="thumbSrc" value="manga" checked><span>マンガ</span></label>
+      <label><input type="radio" name="thumbSrc" value="anime"><span>アニメ</span></label>
     </div>
     <button type="button" class="btn btn-accent" id="statsBtn" title="表に入れたエピソードの、登場キャラや年代などの傾向を集計します">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11M12 20V4M19 20v-6"/></svg>集計
@@ -141,7 +146,7 @@
   <p>マンガの事件の情報・サムネイル画像は、少年サンデー公式サイト「名探偵コナン 全事件レポート編纂室」（websunday.net）の掲載内容を利用しています。</p>
   <p>アニメオリジナルの情報・サムネイル画像は、読売テレビ「名探偵コナン 事件ファイル」（ytv.co.jp）の掲載内容を利用し、前編・後編などは1つにまとめています。アニメオリジナルかどうかとシーズンの区分は、Wikipedia「名探偵コナンのアニメエピソード一覧」を、マンガとアニメの対応は同「名探偵コナンの漫画エピソード一覧」を参考にしています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.6.3</p>
+  <p class="version">Ver 1.7.0</p>
 </footer>
 
 <!-- エピソード詳細 -->
@@ -162,6 +167,10 @@
     </div>
     <p class="dlg-label">Tierに入れる</p>
     <div class="chips" id="dChips"></div>
+    <div id="dMemoBox">
+      <label class="dlg-label" for="dMemo" title="表のリンクには含まれず、エクスポートのJSONには保存されます">メモ（自分だけが見られます）</label>
+      <textarea id="dMemo" rows="3" maxlength="300" placeholder="感想やメモを書けます"></textarea>
+    </div>
     <a class="detail-link" id="dLink" target="_blank" rel="noopener noreferrer">公式サイトでこの事件を見る ↗</a>
   </div>
 </dialog>
@@ -196,6 +205,7 @@
     <div class="seg seg-dlg" role="radiogroup" aria-label="絞り込み方法">
       <label><input type="radio" name="charMode" value="all" checked><span>全員が登場</span></label>
       <label><input type="radio" name="charMode" value="any"><span>誰か1人でも登場</span></label>
+      <label><input type="radio" name="charMode" value="none"><span>誰も登場しない</span></label>
     </div>
     <div class="char-grid" id="charGrid"></div>
     <p class="char-result" id="charResult"></p>
@@ -362,7 +372,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.6.3"></script>
-<script src="script.js?v=1.6.3"></script>
+<script src="data/episodes.js?v=1.7.0"></script>
+<script src="script.js?v=1.7.0"></script>
 </body>
 </html>

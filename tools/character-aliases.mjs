@@ -94,6 +94,18 @@ export const ALIASES = {
 //  - スコッチ: the word is far more often the whisky, and he never appears in anime originals.
 export const NOT_ESTIMATED = ["工藤新一", "スコッチ"];
 
+// Manual corrections for specific anime-original episodes, keyed by YTV episode number (the number after
+// "A" in the app's badge - the FIRST episode of a merged multi-part entry). A user found several episodes in
+// the classic 毛利小五郎"名探偵ぶり" format (he gets the credit, but コナン solves it through his bow-tie voice
+// changer, unnamed in the synopsis) missing コナン from the estimate; each was checked by eye against the
+// episode. Not a blanket rule (「探偵女子」spin-offs such as 女子会ミステリー really do have no コナン), so this
+// stays a short, hand-checked list rather than a heuristic. Add to it the same way when another wrong episode
+// is reported: {name: ["+add"] or ["-remove"]}.
+export const FORCE_CAST = {
+  67: ["+江戸川コナン"], 95: ["+江戸川コナン"], 196: ["+江戸川コナン"], 979: ["+江戸川コナン"],
+  980: ["+江戸川コナン"], 1049: ["+江戸川コナン"], 1103: ["+江戸川コナン"], 1139: ["+江戸川コナン"], 1213: ["+江戸川コナン"],
+};
+
 // A group name in the text stands for several characters.
 const GROUPS = { 少年探偵団: ["吉田歩美", "小嶋元太", "円谷光彦", "灰原哀"] };
 

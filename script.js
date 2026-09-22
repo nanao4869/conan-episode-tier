@@ -6,10 +6,28 @@
   const isAnime = (ep) => ep.k === "a";
   // A manga case that has an anime version (its アニメ list has a link).
   const hasTv = (ep) => !isAnime(ep) && !!ep.an && ep.an.some((a) => a.u);
-  // What is shown for an episode: manga cases use the site's case number, anime originals "A" + episode number.
-  const labelOf = (ep) => ep.label || String(ep.no);
+
+  // Manga cases can show their own panel or the corresponding anime still (サムネイル switch, screen-only preference).
+  const THUMB_KEY = "conanEpisodeTier.thumb";
+  let thumbPref = "manga";
+  try { thumbPref = localStorage.getItem(THUMB_KEY) === "anime" ? "anime" : "manga"; } catch (e) { /* ignore */ }
+  // The first アニメ adaptation that has its own thumbnail (a few cases have two; the first covers almost all of them).
+  const animeAdaptOf = (ep) => (!isAnime(ep) && ep.an ? ep.an.find((a) => a.img) : null) || null;
+  const showsAnime = (ep) => isAnime(ep) || (thumbPref === "anime" && !!animeAdaptOf(ep));
+  // What is shown for an episode: manga cases use the site's case number (or the adapted episode's "A" + number
+  // while the サムネイル switch is on アニメ), anime originals always "A" + episode number.
+  const labelOf = (ep) => {
+    if (!isAnime(ep) && thumbPref === "anime") {
+      const a = animeAdaptOf(ep);
+      if (a) return a.label;
+    }
+    return ep.label || String(ep.no);
+  };
   // Tiles use a small 180px square copy (img/t/...); the detail dialog loads the full-size image.
-  const thumbOf = (ep) => ep.img.replace(/^img\//, "img/t/").replace(/\.\w+$/, ".jpg");
+  const thumbOf = (ep) => {
+    const a = !isAnime(ep) && thumbPref === "anime" ? animeAdaptOf(ep) : null;
+    return (a ? a.img : ep.img).replace(/^img\//, "img/t/").replace(/\.\w+$/, ".jpg");
+  };
   const CHARS = window.CHARACTERS || [];
   const CHAR_BY_ID = new Map(CHARS.map((c) => [c.id, c]));
   const STORAGE_KEY = "conanEpisodeTier.v1";
@@ -43,11 +61,14 @@
   let idSeq = 0;
   const newId = () => `t${Date.now().toString(36)}${(idSeq++).toString(36)}`;
 
+  const NOTE_MAX = 300;
+
   function defaultState() {
     return {
       title: DEFAULT_TITLE,
       mode: "title",
       tiers: DEFAULT_TIERS.map((t) => ({ id: newId(), name: t.name, color: t.color, items: [] })),
+      notes: {},
     };
   }
 
@@ -69,10 +90,18 @@
         items,
       };
     });
+    const notes = {};
+    if (raw.notes && typeof raw.notes === "object") {
+      for (const [k, v] of Object.entries(raw.notes)) {
+        const no = Number(k);
+        if (BY_NO.has(no) && typeof v === "string" && v.trim()) notes[no] = v.slice(0, NOTE_MAX);
+      }
+    }
     return {
       title: typeof raw.title === "string" ? raw.title.slice(0, 100) : DEFAULT_TITLE,
       mode: ["image", "badge", "title"].includes(raw.mode) ? raw.mode : "title",
       tiers,
+      notes,
     };
   }
 
@@ -90,6 +119,9 @@
   let ownState = null;
   let shareTimer = 0; // the link to our own board is rebuilt a moment after every change (see scheduleShareLink)
   let shareCache = { key: "", link: "" };
+
+  // Per-episode memos: kept in state (and exported to the backup JSON) but never in the share link/URL - see encodeBoard().
+  const hasNote = (no) => !!(state.notes && state.notes[no]);
 
   function save() {
     if (viewMode) return; // never write a friend's board over our own
@@ -197,26 +229,41 @@
     let d = itemCache.get(ep.no);
     if (d) return d;
     d = document.createElement("div");
-    d.className = "item" + (isAnime(ep) ? " is-anime" : "");
+    d.className = "item";
     d.dataset.no = ep.no;
     d.tabIndex = 0;
     d.setAttribute("role", "button");
-    d.title = `${isAnime(ep) ? "" : "No."}${labelOf(ep)} ${ep.title}`;
     const img = new Image();
-    img.src = thumbOf(ep);
     img.alt = ep.title;
     img.draggable = false;
     img.decoding = "async";
     img.loading = "lazy";
     const badge = document.createElement("span");
     badge.className = "badge";
-    badge.textContent = labelOf(ep);
     const cap = document.createElement("span");
     cap.className = "cap";
     cap.textContent = ep.title;
-    d.append(img, badge, cap);
+    const memo = document.createElement("span");
+    memo.className = "memo-dot no-export";
+    memo.title = "メモがあります";
+    d.append(img, badge, cap, memo);
     itemCache.set(ep.no, d);
+    refreshItemEl(ep, d);
     return d;
+  }
+
+  // Refreshes the parts of a tile that depend on the サムネイル switch and on whether a memo is saved,
+  // both of which can change after the tile was first built (itemEl() only builds each tile once).
+  function refreshItemEl(ep, d = itemCache.get(ep.no)) {
+    if (!d) return;
+    d.classList.toggle("is-anime", showsAnime(ep));
+    d.title = `${showsAnime(ep) ? "" : "No."}${labelOf(ep)} ${ep.title}`;
+    d.firstChild.src = thumbOf(ep);
+    d.querySelector(".badge").textContent = labelOf(ep);
+    d.classList.toggle("has-memo", hasNote(ep.no));
+  }
+  function refreshAllItems() {
+    for (const [no, d] of itemCache) refreshItemEl(BY_NO.get(no), d);
   }
 
   function textColorFor(hex) {
@@ -326,7 +373,10 @@
 
   const selectedChars = new Set();
   let charMode = "all";
-  const matchChars = (ep, ids) => (charMode === "all" ? ids.every((id) => ep.c.includes(id)) : ids.some((id) => ep.c.includes(id)));
+  const matchChars = (ep, ids) =>
+    charMode === "all" ? ids.every((id) => ep.c.includes(id))
+    : charMode === "none" ? ids.every((id) => !ep.c.includes(id))
+    : ids.some((id) => ep.c.includes(id));
 
   function renderCharChips() {
     $("charBtn").classList.toggle("is-active", selectedChars.size > 0);
@@ -650,6 +700,14 @@
     }
     ep.an.forEach((a) => {
       const li = document.createElement("li");
+      if (a.img) {
+        const pic = new Image();
+        pic.className = "an-thumb";
+        pic.src = a.img.replace(/^img\//, "img/t/").replace(/\.\w+$/, ".jpg");
+        pic.alt = "";
+        pic.loading = "lazy";
+        li.append(pic);
+      }
       if (a.s) {
         const season = document.createElement("span");
         season.className = "an-season";
@@ -681,9 +739,11 @@
     });
   }
 
+  let detailNo = null;
   function openDetail(no) {
     const ep = BY_NO.get(no);
     if (!ep) return;
+    detailNo = no;
     $("dImg").src = ep.img;
     $("dImg").alt = ep.title;
     $("dNo").textContent = isAnime(ep) ? `アニメオリジナル ${labelOf(ep)}` : `事件 No.${ep.no}`;
@@ -740,8 +800,26 @@
     chips.append(pb);
     $("dChips").hidden = viewMode;
     $("dChips").previousElementSibling.hidden = viewMode;
+    $("dMemo").value = (state.notes && state.notes[no]) || "";
+    $("dMemoBox").hidden = viewMode; // notes belong to our own state; there is nothing to save while viewing a friend's board
     detailDlg.showModal();
   }
+
+  // Saved a moment after typing stops, like the share link (scheduleShareLink); doesn't create undo steps (unlike board edits).
+  let memoTimer = 0;
+  $("dMemo").addEventListener("input", () => {
+    clearTimeout(memoTimer);
+    const no = detailNo;
+    const val = $("dMemo").value;
+    memoTimer = setTimeout(() => {
+      if (viewMode || !BY_NO.has(no)) return;
+      state.notes = state.notes || {};
+      if (val.trim()) state.notes[no] = val.slice(0, NOTE_MAX);
+      else delete state.notes[no];
+      save();
+      refreshItemEl(BY_NO.get(no));
+    }, 400);
+  });
 
   /* ---------------------------------------------------- character filter */
 
@@ -949,9 +1027,11 @@
   });
 
   $("resetBtn").addEventListener("click", () => {
-    if (!confirm("Tier表を初期状態に戻しますか？\n並べたエピソードも行の設定もすべて消えます。")) return;
+    if (!confirm("Tier表を初期状態に戻しますか？\n並べたエピソードも行の設定もすべて消えます。（エピソードのメモは残ります）")) return;
+    const notes = state.notes;
     track(() => {
       state = defaultState();
+      state.notes = notes; // memos are about the episode itself, not the board, so they survive a reset
     });
     titleEl.textContent = state.title;
     qEl.value = "";
@@ -973,6 +1053,16 @@
   function syncModeRadios() {
     document.querySelectorAll('input[name="mode"]').forEach((r) => (r.checked = r.value === state.mode));
   }
+
+  // サムネイル switch (マンガ／アニメ): a screen preference, not part of the board (not saved to the share link or the backup file).
+  document.querySelectorAll('input[name="thumbSrc"]').forEach((r) => {
+    r.checked = r.value === thumbPref;
+    r.addEventListener("change", () => {
+      thumbPref = r.value === "anime" ? "anime" : "manga";
+      try { localStorage.setItem(THUMB_KEY, thumbPref); } catch (e) { /* not remembered, still works */ }
+      refreshAllItems();
+    });
+  });
 
   titleEl.addEventListener("input", () => {
     if (!titleEl.textContent.trim()) titleEl.textContent = ""; // let :empty show the placeholder
@@ -1237,6 +1327,7 @@
       title: state.title,
       mode: state.mode,
       tiers: state.tiers.map((t) => ({ name: t.name, color: t.color, items: [...t.items] })),
+      notes: { ...state.notes },
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
     const a = document.createElement("a");
@@ -1266,7 +1357,7 @@
     const placedNow = count(state.tiers);
     const placedNext = count(next.tiers);
     const skipped = count(raw.tiers) - placedNext;
-    if (!confirm(`「${file.name}」を読み込みます。\n現在の表（${placedNow}件を配置済み）は、読み込む表（${placedNext}件を配置）に置き換わります。よろしいですか？`)) return;
+    if (!confirm(`「${file.name}」を読み込みます。\n現在の表（${placedNow}件を配置済み）とメモは、読み込む表（${placedNext}件を配置）に置き換わります。よろしいですか？`)) return;
 
     track(() => {
       state = next;
@@ -1275,6 +1366,7 @@
     syncModeRadios();
     save();
     render();
+    refreshAllItems();
     toast(skipped > 0 ? `読み込みました（認識できない${skipped}件は除外）` : "読み込みました");
   }
 
@@ -2270,7 +2362,7 @@
   function enterView(board, name) {
     if (!viewMode) ownState = state;
     viewMode = true;
-    state = { ...board, mode: ownState.mode }; // keep the viewer's own display setting
+    state = { ...board, mode: ownState.mode, notes: ownState.notes }; // keep the viewer's own display setting and memos (memos are about the episode, not whose board is shown)
     document.body.classList.add("viewing");
     titleEl.contentEditable = "false";
     titleEl.textContent = state.title;

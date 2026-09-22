@@ -747,6 +747,7 @@
 
   const detailDlg = $("detailDialog");
   const tierDlg = $("tierDialog");
+  $("aboutBtn").addEventListener("click", () => $("aboutDialog").showModal());
 
   // The detail dialog can be opened from the メモ一覧 list, stacked on top of it (native <dialog> supports
   // this); closing it comes back to the list, refreshed in case the memo text or the row it's in changed.

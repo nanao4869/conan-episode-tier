@@ -607,12 +607,15 @@ body.viewing .list-title:hover { background: none; }
    Captions are dropped in the list so that more tiles fit; the episode number stays on the tile. */
 @media (max-width: 520px) {
   /* episode page only - was unscoped and unintentionally also gave the movie/opening pages an oversized
-     (62dvh) default height at this width, instead of the 42dvh all three pages otherwise share */
-  body:not(.op-page):not(.mv-page) .pool { height: auto; max-height: 62vh; max-height: 62dvh; }
-  .pool-grid {
-    --tile: calc((100vw - 16px) / 5 - 1px); --item-h: var(--tile);
-    max-height: calc(var(--tile) * 4.25 + 16px);
-  }
+     (62dvh) default height at this width, instead of the 42dvh all three pages otherwise share.
+     A fixed height (not auto+max-height) so the drag handle can freely override it inline - a max-height
+     here would always win over a taller dragged height, capping the drag right back at the default size. */
+  body:not(.op-page):not(.mv-page) .pool { height: 62vh; height: 62dvh; max-height: none; }
+  /* no max-height here (there used to be one, capped to ~4.25 rows): that fought the drag-to-resize handle,
+     since the grid could never grow past its own cap even when #pool was dragged taller. Without it, the
+     grid just naturally fills whatever room #pool actually has (same flex shrink-to-fit as every other
+     breakpoint/page already relies on), so dragging #pool bigger really does show more rows. */
+  .pool-grid { --tile: calc((100vw - 16px) / 5 - 1px); --item-h: var(--tile); }
   body .pool-grid .item .cap { display: none; }
   body .pool-grid .item .badge {
     display: block; position: absolute; left: 0; top: auto; bottom: 0; padding: 0 4px;

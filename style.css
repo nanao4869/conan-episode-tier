@@ -188,11 +188,13 @@ body.op-page .item.op-playing { outline: 3px solid #ffd54a; outline-offset: -1px
 @media (max-width: 520px) {
   body.op-page .pool-grid { --tile: calc((100vw - 16px) / 4 - 1px); }
 }
-.yt-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; overflow: hidden; transition: height .2s ease; }
+/* flex-shrink:0 so the video keeps its full 16:9 height when the pool's height is capped on phones (.pool-grid,
+   which already scrolls, is the one that should give up space, not the player) */
+.yt-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; overflow: hidden; transition: height .2s ease; flex: 0 0 auto; }
 .yt-wrap iframe, .yt-wrap > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 /* height (not display:none) so the iframe stays "visible" to the browser and keeps playing audio while collapsed */
 .yt-wrap.is-hidden { height: 0; aspect-ratio: unset; }
-.yt-caption-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 12px 0; flex-wrap: wrap; }
+.yt-caption-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 12px 0; flex-wrap: wrap; flex: 0 0 auto; }
 .yt-caption { font-size: 12px; color: var(--muted); text-align: center; }
 #ytHideBtn { padding: 3px 10px; font-size: 11px; }
 

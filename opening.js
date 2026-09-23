@@ -299,10 +299,40 @@
     renderPool();
   });
 
-  // モバイルでは一覧がずっと画面の4割強を占めるので、一時的に隠して表を広く見られるようにする。
+  // モバイルでは一覧がずっと画面の4割強を占めるので、タイトルバーを上下にドラッグして高さを変えられるように
+  // する（ボタンは、最小の高さ⇄既定の高さ（CSSの42dvh）を切り替えるショートカット）。
+  const POOL_MIN_H = 60;
+  const poolHeadEl = $("poolHead");
+  let poolDrag = null;
+  poolHeadEl.addEventListener("pointerdown", (e) => {
+    if (!matchMedia("(max-width: 899px)").matches) return;
+    if (e.target.closest("button, select, input, a, label")) return; // let the existing controls keep working
+    poolDrag = { id: e.pointerId, startY: e.clientY, startH: poolEl.getBoundingClientRect().height };
+    poolEl.classList.add("is-resizing");
+    e.preventDefault();
+  });
+  window.addEventListener("pointermove", (e) => {
+    if (!poolDrag || e.pointerId !== poolDrag.id) return;
+    const delta = poolDrag.startY - e.clientY; // dragging up = growing
+    const max = window.innerHeight - 140;
+    poolEl.style.height = `${Math.max(POOL_MIN_H, Math.min(max, poolDrag.startH + delta))}px`;
+  });
+  function updatePoolCollapseLabel() {
+    const h = poolEl.getBoundingClientRect().height;
+    $("poolCollapseBtn").textContent = h <= POOL_MIN_H + 20 ? "表示" : "隠す";
+  }
+  function endPoolDrag(e) {
+    if (!poolDrag || e.pointerId !== poolDrag.id) return;
+    poolDrag = null;
+    poolEl.classList.remove("is-resizing");
+    updatePoolCollapseLabel();
+  }
+  window.addEventListener("pointerup", endPoolDrag);
+  window.addEventListener("pointercancel", endPoolDrag);
   $("poolCollapseBtn").addEventListener("click", () => {
-    const collapsed = poolEl.classList.toggle("is-collapsed");
-    $("poolCollapseBtn").textContent = collapsed ? "表示" : "隠す";
+    const h = poolEl.getBoundingClientRect().height;
+    poolEl.style.height = h <= POOL_MIN_H + 20 ? "" : `${POOL_MIN_H}px`; // "" = back to the CSS default
+    updatePoolCollapseLabel();
   });
 
   // アーティストで絞り込み: most songs first (so 倉木麻衣 etc. sort near the top), ties broken alphabetically.

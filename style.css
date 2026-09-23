@@ -301,17 +301,18 @@ body.op-page .board.exporting { --tile: 112px; }
     position: sticky; top: auto; bottom: 0; z-index: 20; margin: 12px -10px 0;
     height: 42vh; height: 42dvh; max-height: none; border-radius: 14px 14px 0 0; border-bottom: 0;
     box-shadow: 0 -8px 24px rgba(0, 0, 0, .55); padding-bottom: env(safe-area-inset-bottom);
+    transition: height .2s ease; overflow: hidden; /* overflow:hidden already on .pool - repeated so a short
+      height (dragged down, or the "隠す" button) simply clips the filters/list instead of needing to hide them */
   }
+  .pool.is-resizing { transition: none; } /* no lag while a finger is actually moving it */
   .pool-collapse-btn { display: inline-flex; align-items: center; margin-left: auto; }
-  /* collapsed: only the title bar (name, count, this button) stays - everything else that makes the
-     panel tall (video, filters, the list itself) is hidden, so the board gets almost the full screen. */
-  #pool.is-collapsed { height: auto; padding-bottom: 0; }
-  #pool.is-collapsed .yt-wrap,
-  #pool.is-collapsed .yt-caption-row,
-  #pool.is-collapsed .pool-filters,
-  #pool.is-collapsed .pool-filters-2,
-  #pool.is-collapsed .pool-char-row,
-  #pool.is-collapsed #poolGrid { display: none; }
+  /* drag handle: the whole title bar is grabbable (dragging up/down resizes the panel), with a small
+     grip mark so it reads as draggable; buttons/inputs inside it are excluded in JS so they keep working. */
+  #poolHead { position: relative; padding-top: 16px; cursor: ns-resize; touch-action: none; }
+  #poolHead::before {
+    content: ""; position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+    width: 36px; height: 4px; border-radius: 2px; background: #4a4a56;
+  }
   .toast { bottom: calc(42dvh + 16px); }
 }
 
@@ -605,7 +606,9 @@ body.viewing .list-title:hover { background: none; }
 /* phones: the episode list is exactly 5 columns wide (the tile size follows the screen width) and about 4 rows tall.
    Captions are dropped in the list so that more tiles fit; the episode number stays on the tile. */
 @media (max-width: 520px) {
-  .pool { height: auto; max-height: 62vh; max-height: 62dvh; }
+  /* episode page only - was unscoped and unintentionally also gave the movie/opening pages an oversized
+     (62dvh) default height at this width, instead of the 42dvh all three pages otherwise share */
+  body:not(.op-page):not(.mv-page) .pool { height: auto; max-height: 62vh; max-height: 62dvh; }
   .pool-grid {
     --tile: calc((100vw - 16px) / 5 - 1px); --item-h: var(--tile);
     max-height: calc(var(--tile) * 4.25 + 16px);

@@ -367,6 +367,12 @@
     renderPool();
   });
 
+  // モバイルでは一覧がずっと画面の4割強を占めるので、一時的に隠して表を広く見られるようにする。
+  $("poolCollapseBtn").addEventListener("click", () => {
+    const collapsed = poolEl.classList.toggle("is-collapsed");
+    $("poolCollapseBtn").textContent = collapsed ? "表示" : "隠す";
+  });
+
   const selectedChars = new Set();
   let charMode = "all";
   const matchChars = (ep, ids) =>

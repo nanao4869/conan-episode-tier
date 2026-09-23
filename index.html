@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.9.0">
+<link rel="stylesheet" href="style.css?v=1.10.0">
 </head>
 <body data-mode="title">
 
@@ -102,6 +102,7 @@
           <span id="poolCount" class="pool-count"></span>
           <button type="button" class="found-btn" id="foundBtn" title="今の絞り込みに合う、表に配置済みのエピソードへ移動します" hidden></button>
           <button type="button" class="btn btn-ghost btn-sm filter-toggle" id="filterToggle" aria-expanded="false">絞り込み ▾</button>
+          <button type="button" class="btn btn-ghost btn-sm pool-collapse-btn" id="poolCollapseBtn" title="一覧を一時的に隠して、表を広く使えます">隠す</button>
         </div>
         <div class="pool-filters">
           <input type="search" id="q" placeholder="タイトル・話数で検索" autocomplete="off" aria-label="検索">
@@ -153,7 +154,7 @@
 
 <footer class="site-footer">
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。 <button type="button" class="link-btn" id="aboutBtn">このサイトについて</button></p>
-  <p class="version">Ver 1.9.0</p>
+  <p class="version">Ver 1.10.0</p>
 </footer>
 
 <!-- このサイトについて -->
@@ -417,7 +418,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.9.0"></script>
-<script src="script.js?v=1.9.0"></script>
+<script src="data/episodes.js?v=1.10.0"></script>
+<script src="script.js?v=1.10.0"></script>
 </body>
 </html>

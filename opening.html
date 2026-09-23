@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.1.1">
+<link rel="stylesheet" href="style.css?v=1.2.0">
 </head>
 <body class="op-page">
 
@@ -85,6 +85,7 @@
           <h2>主題歌</h2>
           <span id="poolCount" class="pool-count"></span>
           <button type="button" class="btn btn-ghost btn-sm" id="sortBtn" title="放送順／逆順を切り替えます" style="margin-left:auto">並び：放送順</button>
+          <button type="button" class="btn btn-ghost btn-sm pool-collapse-btn" id="poolCollapseBtn" title="一覧を一時的に隠して、表を広く使えます">隠す</button>
         </div>
         <div class="pool-filters">
           <select id="artistFilter" aria-label="アーティストで絞り込み"><option value="">すべてのアーティスト</option></select>
@@ -119,7 +120,7 @@
 <footer class="site-footer">
   <p>動画の埋め込みはYouTubeの公式プレーヤーを利用しており、音源・映像はYouTube上のものをそのまま再生しています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.1.1</p>
+  <p class="version">Ver 1.2.0</p>
 </footer>
 
 <!-- 主題歌詳細 -->
@@ -160,7 +161,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/openings.js?v=1.1.1"></script>
-<script src="opening.js?v=1.1.1"></script>
+<script src="data/openings.js?v=1.2.0"></script>
+<script src="opening.js?v=1.2.0"></script>
 </body>
 </html>

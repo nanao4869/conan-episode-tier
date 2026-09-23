@@ -302,6 +302,16 @@ body.op-page .board.exporting { --tile: 112px; }
     height: 42vh; height: 42dvh; max-height: none; border-radius: 14px 14px 0 0; border-bottom: 0;
     box-shadow: 0 -8px 24px rgba(0, 0, 0, .55); padding-bottom: env(safe-area-inset-bottom);
   }
+  .pool-collapse-btn { display: inline-flex; align-items: center; margin-left: auto; }
+  /* collapsed: only the title bar (name, count, this button) stays - everything else that makes the
+     panel tall (video, filters, the list itself) is hidden, so the board gets almost the full screen. */
+  #pool.is-collapsed { height: auto; padding-bottom: 0; }
+  #pool.is-collapsed .yt-wrap,
+  #pool.is-collapsed .yt-caption-row,
+  #pool.is-collapsed .pool-filters,
+  #pool.is-collapsed .pool-filters-2,
+  #pool.is-collapsed .pool-char-row,
+  #pool.is-collapsed #poolGrid { display: none; }
   .toast { bottom: calc(42dvh + 16px); }
 }
 

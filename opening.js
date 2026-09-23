@@ -299,6 +299,12 @@
     renderPool();
   });
 
+  // モバイルでは一覧がずっと画面の4割強を占めるので、一時的に隠して表を広く見られるようにする。
+  $("poolCollapseBtn").addEventListener("click", () => {
+    const collapsed = poolEl.classList.toggle("is-collapsed");
+    $("poolCollapseBtn").textContent = collapsed ? "表示" : "隠す";
+  });
+
   // アーティストで絞り込み: most songs first (so 倉木麻衣 etc. sort near the top), ties broken alphabetically.
   const artistFilterEl = $("artistFilter");
   (() => {

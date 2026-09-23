@@ -941,6 +941,22 @@
     ytPlayer.playVideo();
   }
 
+  // 動画を隠す: collapses the player's height instead of display:none, so the iframe stays "visible" to the
+  // browser and audio keeps playing while the video itself takes no screen space (mainly for phones, where
+  // the video was taking up too much of the screen).
+  const YT_HIDE_KEY = "conanOpeningTier.hideVideo";
+  const ytWrap = $("ytWrap");
+  const ytHideBtn = $("ytHideBtn");
+  function setVideoHidden(hidden) {
+    ytWrap.classList.toggle("is-hidden", hidden);
+    ytHideBtn.textContent = hidden ? "動画を表示" : "動画を隠す";
+    try { localStorage.setItem(YT_HIDE_KEY, hidden ? "1" : "0"); } catch (e) { /* not remembered, still works */ }
+  }
+  ytHideBtn.addEventListener("click", () => setVideoHidden(!ytWrap.classList.contains("is-hidden")));
+  let hideVideoPref = false;
+  try { hideVideoPref = localStorage.getItem(YT_HIDE_KEY) === "1"; } catch (e) { /* default to shown */ }
+  setVideoHidden(hideVideoPref);
+
   function markPlaying() {
     for (const [no, el] of itemCache) el.classList.toggle("op-playing", no === playingNo);
     const s = playingNo != null ? BY_NO.get(playingNo) : null;

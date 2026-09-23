@@ -329,6 +329,7 @@
   }
   window.addEventListener("pointerup", endPoolDrag);
   window.addEventListener("pointercancel", endPoolDrag);
+  document.addEventListener("touchmove", (e) => { if (poolDrag) e.preventDefault(); }, { passive: false });
   $("poolCollapseBtn").addEventListener("click", () => {
     const h = poolEl.getBoundingClientRect().height;
     poolEl.style.height = h <= POOL_MIN_H + 20 ? "" : `${POOL_MIN_H}px`; // "" = back to the CSS default

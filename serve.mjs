@@ -34,19 +34,25 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 
+// 使用中のポートに当たるたびに再試行するが、起動後の処理（ブラウザを開く）は成功したときの1回だけ行う
 function listen(port, triesLeft) {
-  server.once("error", (err) => {
+  const onError = (err) => {
+    server.off("listening", onListening);
     if (err.code === "EADDRINUSE" && triesLeft > 0) return listen(port + 1, triesLeft - 1);
     console.error(err.message);
     process.exit(1);
-  });
-  server.listen(port, "127.0.0.1", () => {
+  };
+  const onListening = () => {
+    server.off("error", onError);
     const page = process.argv.slice(2).find((a) => !a.startsWith("--")) || "";
     const url = `http://localhost:${port}/${page}`;
     console.log(`Tier表メーカーを起動しました: ${url}`);
     console.log("終了するには、このウィンドウを閉じるか Ctrl+C を押してください。");
     if (!process.argv.includes("--no-open")) exec(`start "" "${url}"`);
-  });
+  };
+  server.once("error", onError);
+  server.once("listening", onListening);
+  server.listen(port, "127.0.0.1");
 }
 
 listen(8123, 10);

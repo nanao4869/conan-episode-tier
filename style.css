@@ -248,7 +248,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .7); }
 .detail-title { margin: 2px 0 2px; font-size: 18px; line-height: 1.4; }
 .detail-file { margin: 0; font-size: 12px; color: var(--muted); }
 .detail-link { display: inline-block; margin-top: 14px; font-size: 13px; color: #7db8ff; }
-.detail-summary { margin: 10px 0 0; font-size: 14px; line-height: 1.7; }
+.detail-summary { margin: 10px 0 0; font-size: 14px; line-height: 1.7; font-weight: 500; }
 .detail-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .holmes-link {
   display: inline-block; padding: 8px 12px; border: 1px solid #3a3a48; border-radius: 8px;
@@ -296,6 +296,7 @@ body.op-page .board.exporting { --tile: 112px; }
 .board.exporting .list-title:empty { display: none; }
 .board.exporting .list-title:hover { background: none; }
 
+.pool-collapse-btn { display: none; } /* スマホ幅（下の @media）でだけ使う */
 /* ---------- narrow screens ---------- */
 @media (max-width: 899px) {
   :root { --tile: 60px; --label-w: 64px; --fs: .72; }
@@ -680,3 +681,7 @@ body.chars-page .item .ch-art img { display: block; width: 76px; height: 76px; o
 body.chars-page .item .ch-art img.ch-small { width: 64px; height: 64px; margin: 6px 0; image-rendering: pixelated; border-radius: 0; }
 body.chars-page .item .ch-name { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
 body.chars-page .board.exporting { --tile: 92px; }
+.pool-group { flex: 0 0 100%; grid-column: 1 / -1; margin: 8px 2px 4px; padding: 0 0 3px 8px; border-left: 4px solid var(--red); font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
+.pool-group:first-child { margin-top: 2px; }
+.detail-link-inline { color: #7db8ff; }
+#dSource { margin-top: 6px; }

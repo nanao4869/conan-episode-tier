@@ -13,7 +13,7 @@
   --label-w: 100px;
   --fs: 1;
   --font-system: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", Meiryo, "Noto Sans JP", sans-serif;
-  --font: "M PLUS Rounded 1c", "Hiragino Maru Gothic Pro", var(--font-system);
+  --font: "Noto Sans JP", var(--font-system);
 }
 
 body[data-mode="title"] { --item-h: calc(var(--tile) + 30px); }
@@ -248,6 +248,15 @@ dialog::backdrop { background: rgba(0, 0, 0, .7); }
 .detail-title { margin: 2px 0 2px; font-size: 18px; line-height: 1.4; }
 .detail-file { margin: 0; font-size: 12px; color: var(--muted); }
 .detail-link { display: inline-block; margin-top: 14px; font-size: 13px; color: #7db8ff; }
+.detail-summary { margin: 10px 0 0; font-size: 14px; line-height: 1.7; }
+.detail-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.holmes-link {
+  display: inline-block; padding: 8px 12px; border: 1px solid #3a3a48; border-radius: 8px;
+  font-size: 13px; font-weight: 700; color: #7db8ff; text-decoration: none;
+}
+.holmes-link:hover { background: #22222c; }
+body.holmes-page .item .op-artist { font-size: 11px; }
+body.holmes-page .item .op-title { font-size: 12px; -webkit-line-clamp: 3; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip {
@@ -308,9 +317,9 @@ body.op-page .board.exporting { --tile: 112px; }
   .pool-collapse-btn { display: inline-flex; align-items: center; margin-left: auto; }
   /* drag handle: the whole title bar is grabbable (dragging up/down resizes the panel), with a small
      grip mark so it reads as draggable; buttons/inputs inside it are excluded in JS so they keep working. */
-  #poolHead { position: relative; padding-top: 16px; cursor: ns-resize; touch-action: none; }
+  #poolHead { position: relative; padding-top: 30px; padding-bottom: 8px; cursor: ns-resize; touch-action: none; }
   #poolHead::before {
-    content: ""; position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+    content: ""; position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
     width: 36px; height: 4px; border-radius: 2px; background: #4a4a56;
   }
   .toast { bottom: calc(42dvh + 16px); }
@@ -590,6 +599,7 @@ body.viewing .list-title:hover { background: none; }
 .other-tools { max-width: 720px; margin: 36px auto 0; padding: 0 16px; }
 .other-tools h2 { margin: 0 0 10px; font-size: 14px; font-weight: 700; color: var(--muted); }
 .tool-card { display: flex; align-items: stretch; gap: 14px; overflow: hidden; border: 1px solid var(--line2); border-radius: 12px; background: var(--panel); color: var(--text); text-decoration: none; transition: border-color .15s, background .15s; }
+.tool-card + .tool-card { margin-top: 14px; }
 .tool-card:hover { border-color: #4a86d8; background: var(--panel2); }
 .tool-card:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .tool-card img { flex: 0 0 auto; width: 200px; height: auto; object-fit: cover; background: #222; }

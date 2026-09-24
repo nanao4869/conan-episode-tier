@@ -3,31 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>コナン 主題歌Tier表メーカー（べーた）</title>
-<meta name="description" content="名探偵コナンの歴代OP・ED主題歌をTier表にして画像で保存できるツールです。動画を見ながら操作できます。">
+<title>シャーロック・ホームズ Tier表メーカー（べーた）</title>
+<meta name="description" content="シャーロック・ホームズの長編4作・短編56作をTier表にして画像で保存できるツールです。あらすじやWikipedia・青空文庫へのリンク付き。">
 <meta name="theme-color" content="#0d1a3a">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="コナン 主題歌Tier表メーカー">
-<meta property="og:title" content="名探偵コナン 主題歌Tier表メーカー（べーた）">
-<meta property="og:description" content="名探偵コナンの歴代OP・ED主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
-<meta property="og:url" content="https://nanao4869.github.io/conan-episode-tier/opening.html">
-<meta property="og:image" content="https://nanao4869.github.io/conan-episode-tier/og-image-opening.png">
+<meta property="og:site_name" content="シャーロック・ホームズ Tier表メーカー">
+<meta property="og:title" content="シャーロック・ホームズ Tier表メーカー（べーた）">
+<meta property="og:description" content="シャーロック・ホームズの全60作を、ドラッグでTier表に並べて画像で保存できます。">
+<meta property="og:url" content="https://nanao4869.github.io/conan-episode-tier/holmes.html">
+<meta property="og:image" content="https://nanao4869.github.io/conan-episode-tier/og-image-holmes.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="名探偵コナン 主題歌Tier表メーカー（べーた）">
-<meta name="twitter:description" content="名探偵コナンの歴代OP・ED主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
-<meta name="twitter:image" content="https://nanao4869.github.io/conan-episode-tier/og-image-opening.png">
+<meta name="twitter:title" content="シャーロック・ホームズ Tier表メーカー（べーた）">
+<meta name="twitter:description" content="シャーロック・ホームズの全60作を、ドラッグでTier表に並べて画像で保存できます。">
+<meta name="twitter:image" content="https://nanao4869.github.io/conan-episode-tier/og-image-holmes.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1a3a'/%3E%3Crect x='10' y='12' width='14' height='10' fill='%23ff7f7f'/%3E%3Crect x='10' y='27' width='14' height='10' fill='%23ffdf7f'/%3E%3Crect x='10' y='42' width='14' height='10' fill='%237fff7f'/%3E%3Crect x='28' y='12' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='27' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='42' width='26' height='10' fill='%23555'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.3.4">
+<link rel="stylesheet" href="style.css?v=1.0.0">
 </head>
-<body class="op-page">
+<body class="op-page holmes-page">
 
 <header class="site-header">
-  <h1>名探偵コナン 主題歌Tier表メーカー <span class="beta">べーた</span></h1>
+  <h1>シャーロック・ホームズ Tier表メーカー <span class="beta">べーた</span></h1>
 </header>
 
 <main class="page">
@@ -52,7 +52,7 @@
       <div id="board" class="board">
         <div id="listTitle" class="list-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Tier表のタイトル" data-placeholder="タイトルを入力"></div>
         <div id="tiers" class="tiers"></div>
-        <div class="board-credit">名探偵コナン 主題歌Tier表メーカー ©青山剛昌／小学館</div>
+        <div class="board-credit">シャーロック・ホームズ Tier表メーカー</div>
       </div>
 
       <div class="board-actions">
@@ -74,22 +74,17 @@
       </div>
     </section>
 
-    <aside id="pool" class="pool" aria-label="未分類の主題歌">
+    <aside id="pool" class="pool" aria-label="未分類の作品">
       <div class="pool-head" id="poolHead">
         <div class="pool-title">
-          <h2>主題歌</h2>
+          <h2>作品</h2>
           <span id="poolCount" class="pool-count"></span>
-          <button type="button" class="btn btn-ghost btn-sm" id="sortBtn" title="放送順／逆順を切り替えます" style="margin-left:auto">並び：放送順</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="sortBtn" title="発表順／逆順を切り替えます" style="margin-left:auto">並び：発表順</button>
           <button type="button" class="btn btn-ghost btn-sm pool-collapse-btn" id="poolCollapseBtn" title="一覧を一時的に隠して、表を広く使えます">隠す</button>
         </div>
         <div class="pool-filters">
-          <select id="artistFilter" aria-label="アーティストで絞り込み"><option value="">すべてのアーティスト</option></select>
+          <select id="groupFilter" aria-label="収録作品集で絞り込み"><option value="">すべての作品</option></select>
         </div>
-      </div>
-      <div class="yt-wrap" id="ytWrap"><div id="ytPlayer"></div></div>
-      <div class="yt-caption-row">
-        <p class="yt-caption" id="ytCaption">再生中の曲はありません</p>
-        <button type="button" class="btn btn-ghost btn-sm" id="ytHideBtn" title="映像を隠しても、音声はそのまま再生されます">動画を隠す</button>
       </div>
       <div id="poolGrid" class="pool-grid"></div>
     </aside>
@@ -108,11 +103,11 @@
       <span>マンガ333事件＋アニメオリジナル471話から、好きなエピソードのTier表が作れます。</span>
     </span>
   </a>
-  <a class="tool-card" href="holmes.html">
-    <img src="og-image-holmes.png" alt="" width="240" height="126" loading="lazy">
+  <a class="tool-card" href="opening.html">
+    <img src="og-image-opening.png" alt="" width="240" height="126" loading="lazy">
     <span class="tool-card-body">
-      <strong>シャーロック・ホームズ Tier表メーカー <em>べーた</em></strong>
-      <span>長編4作・短編56作の全60作を、あらすじやWikipedia・青空文庫へのリンク付きでTier表にできます。</span>
+      <strong>コナン 主題歌Tier表メーカー <em>べーた</em></strong>
+      <span>歴代OP・ED主題歌133曲を、動画を見ながらTier表にできます。</span>
     </span>
   </a>
   <a class="tool-card" href="https://nanao4869.github.io/conan-profile-card/">
@@ -125,20 +120,21 @@
 </section>
 
 <footer class="site-footer">
-  <p>動画の埋め込みはYouTubeの公式プレーヤーを利用しており、音源・映像はYouTube上のものをそのまま再生しています。</p>
-  <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.3.4</p>
+  <p>シャーロック・ホームズはアーサー・コナン・ドイルの作品です。あらすじは当サイトによる独自の紹介文で、原文・訳文は掲載していません。</p>
+  <p>作品のリンク先：Wikipedia（日本語版）／青空文庫。非公式のファンツールです。</p>
+  <p class="version">Ver 1.0.0</p>
 </footer>
 
-<!-- 主題歌詳細 -->
+<!-- 作品の詳細 -->
 <dialog id="detailDialog">
   <div class="dlg-body">
     <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
     <p class="detail-no" id="dNo"></p>
     <h3 class="detail-title" id="dTitle"></h3>
     <p class="detail-file" id="dFile"></p>
-    <p class="detail-file" id="dPeriod" hidden></p>
-    <button type="button" class="btn btn-primary" id="dPlayBtn">▶ この曲を再生</button>
+    <p class="detail-file" id="dPeriod"></p>
+    <p class="detail-summary" id="dSummary"></p>
+    <div class="detail-links" id="dLinks"></div>
     <p class="dlg-label">Tierに入れる</p>
     <div class="chips" id="dChips"></div>
   </div>
@@ -168,7 +164,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/openings.js?v=1.3.4"></script>
-<script src="opening.js?v=1.3.4"></script>
+<script src="data/holmes.js?v=1.0.0"></script>
+<script src="holmes.js?v=1.0.0"></script>
 </body>
 </html>

@@ -322,6 +322,10 @@ body.op-page .board.exporting { --tile: 112px; }
     content: ""; position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
     width: 36px; height: 4px; border-radius: 2px; background: #4a4a56;
   }
+  .pool.is-min .pool-head > :not(.pool-title), .pool.is-min > :not(.pool-head) { display: none; }
+  .pool.is-min #poolHead { padding-bottom: 12px; }
+  /* collapsed: a floating rounded strip instead of a full-bleed sheet, so it also looks finished when the page is scrolled to the end */
+  .pool.is-min { bottom: 8px; margin: 12px 0 8px; border: 1px solid var(--line2); border-radius: 14px; padding-bottom: 0; }
   .toast { bottom: calc(42dvh + 16px); }
 }
 

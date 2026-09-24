@@ -301,7 +301,7 @@
 
   // モバイルでは一覧がずっと画面の4割強を占めるので、タイトルバーを上下にドラッグして高さを変えられるように
   // する（ボタンは、最小の高さ⇄既定の高さ（CSSの42dvh）を切り替えるショートカット）。
-  const POOL_MIN_H = 60;
+  const POOL_MIN_H = 78; // just the title row (+ grab handle) - the filters below are hidden at this height (.is-min)
   const poolHeadEl = $("poolHead");
   let poolDrag = null;
   poolHeadEl.addEventListener("pointerdown", (e) => {
@@ -316,9 +316,14 @@
     const delta = poolDrag.startY - e.clientY; // dragging up = growing
     const max = window.innerHeight - 140;
     poolEl.style.height = `${Math.max(POOL_MIN_H, Math.min(max, poolDrag.startH + delta))}px`;
+    syncPoolMin();
   });
+  // the height being animated to (inline style), not the mid-transition one
+  const poolH = () => (poolEl.style.height ? parseFloat(poolEl.style.height) : poolEl.getBoundingClientRect().height);
+  const syncPoolMin = () => poolEl.classList.toggle("is-min", poolH() <= POOL_MIN_H + 6);
   function updatePoolCollapseLabel() {
-    const h = poolEl.getBoundingClientRect().height;
+    syncPoolMin();
+    const h = poolH();
     $("poolCollapseBtn").textContent = h <= POOL_MIN_H + 20 ? "表示" : "隠す";
   }
   function endPoolDrag(e) {
@@ -331,9 +336,10 @@
   window.addEventListener("pointercancel", endPoolDrag);
   document.addEventListener("touchmove", (e) => { if (poolDrag) e.preventDefault(); }, { passive: false });
   $("poolCollapseBtn").addEventListener("click", () => {
-    const h = poolEl.getBoundingClientRect().height;
-    poolEl.style.height = h <= POOL_MIN_H + 20 ? "" : `${POOL_MIN_H}px`; // "" = back to the CSS default
-    updatePoolCollapseLabel();
+    const collapse = poolH() > POOL_MIN_H + 20;
+    poolEl.style.height = collapse ? `${POOL_MIN_H}px` : ""; // "" = back to the CSS default
+    poolEl.classList.toggle("is-min", collapse);
+    $("poolCollapseBtn").textContent = collapse ? "表示" : "隠す";
   });
 
   // アーティストで絞り込み: most songs first (so 倉木麻衣 etc. sort near the top), ties broken alphabetically.

@@ -548,6 +548,13 @@
       dlgOpenedAt = Date.now();
       show();
     };
+    // スマホでは、カードをタップした指の「クリック」が、開いた直後のダイアログ（Tier表のボタンやリンク）に当たってしまうので、開いてすぐのクリックは無視する
+    dlg.addEventListener("click", (e) => {
+      if (Date.now() - dlgOpenedAt < 350) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true);
     dlg.addEventListener("click", (e) => {
       if (e.target.closest && e.target.closest("[data-close]")) return dlg.close();
       if (e.target === dlg && Date.now() - dlgOpenedAt > 350) dlg.close();

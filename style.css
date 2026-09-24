@@ -671,3 +671,12 @@ body.viewing #statsPanel-compare > .dlg-note { display: none; }
 .cmp-ep:hover { background: #33333d; }
 .cmp-ep:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .cmp-more { margin-top: 2px; }
+
+/* ---------- character tier page (official 200px portraits; 32px GIF icons only for the few characters without one) ---------- */
+body.chars-page { --tile: 92px; --item-h: 116px; }
+body.chars-page .item { background: #24242b; border-color: #000; }
+body.chars-page .item .ch-art { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; }
+body.chars-page .item .ch-art img { display: block; width: 76px; height: 76px; object-fit: cover; border-radius: 8px; background: none; pointer-events: none; -webkit-user-drag: none; }
+body.chars-page .item .ch-art img.ch-small { width: 64px; height: 64px; margin: 6px 0; image-rendering: pixelated; border-radius: 0; }
+body.chars-page .item .ch-name { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
+body.chars-page .board.exporting { --tile: 92px; }

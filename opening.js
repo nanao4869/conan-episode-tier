@@ -2,7 +2,11 @@
   "use strict";
 
   // start/end (seconds) mark each song's slice of the linked video; end = next song's start (last song has none).
-  const SONGS = (window.OPENINGS || []).map((s, i, arr) => ({ ...s, end: arr[i + 1] ? arr[i + 1].start : Infinity }));
+  // Songs added after the video was made (no "start") aren't in it at all - they just don't get a play button.
+  const SONGS = (window.OPENINGS || []).map((s, i, arr) => ({
+    ...s,
+    end: arr[i + 1] && arr[i + 1].start != null ? arr[i + 1].start : Infinity,
+  }));
   const BY_NO = new Map(SONGS.map((s) => [s.no, s]));
   const VIDEO_ID = window.OP_VIDEO_ID;
 
@@ -199,19 +203,21 @@
     title.textContent = s.title;
     art.append(artist, title);
 
-    const play = document.createElement("button");
-    play.type = "button";
-    play.className = "op-play no-export";
-    play.setAttribute("aria-label", "この曲を再生");
-    play.textContent = "▶";
-    // Keep this button out of the drag/tap-to-open system: it has its own job.
-    play.addEventListener("pointerdown", (e) => e.stopPropagation());
-    play.addEventListener("click", (e) => {
-      e.stopPropagation();
-      playSong(s.no);
-    });
-
-    d.append(art, play);
+    d.append(art);
+    if (s.start != null || s.video) {
+      const play = document.createElement("button");
+      play.type = "button";
+      play.className = "op-play no-export";
+      play.setAttribute("aria-label", "この曲を再生");
+      play.textContent = "▶";
+      // Keep this button out of the drag/tap-to-open system: it has its own job.
+      play.addEventListener("pointerdown", (e) => e.stopPropagation());
+      play.addEventListener("click", (e) => {
+        e.stopPropagation();
+        playSong(s.no);
+      });
+      d.append(play);
+    }
     itemCache.set(s.no, d);
     return d;
   }
@@ -600,6 +606,7 @@
     $("dFile").textContent = s.artist;
     $("dPeriod").textContent = s.period ? `放送：${s.epRange}（${s.period}）` : "";
     $("dPeriod").hidden = !s.period;
+    $("dPlayBtn").hidden = s.start == null && !s.video;
     $("dPlayBtn").onclick = () => playSong(no);
 
     const cur = tierOf(no);
@@ -967,8 +974,14 @@
 
   // Play/pause, seek, and volume are all left to YouTube's own player UI (playerVars has no `controls: 0`),
   // rather than rebuilding them here - it already does this well, and it's what people expect from a YouTube embed.
+  //
+  // Two modes share the one embedded player:
+  // - "reel": the 133-song compilation video (VIDEO_ID), seeking to each song's timestamp.
+  // - "single": a song added after the reel was made has its own official PV instead (song.video), loaded
+  //   in full. Playing a reel song again swaps the reel video back in.
   let ytPlayer = null;
   let ytReady = false;
+  let ytMode = "reel";
   let playingNo = null;
 
   window.onYouTubeIframeAPIReady = () => {
@@ -987,8 +1000,19 @@
   function playSong(no) {
     const s = BY_NO.get(no);
     if (!s || !ytReady) return;
-    ytPlayer.seekTo(s.start, true);
-    ytPlayer.playVideo();
+    if (s.start != null) {
+      if (ytMode !== "reel") {
+        ytMode = "reel";
+        ytPlayer.loadVideoById(VIDEO_ID);
+      }
+      ytPlayer.seekTo(s.start, true);
+      ytPlayer.playVideo();
+    } else if (s.video) {
+      ytMode = "single";
+      playingNo = no;
+      ytPlayer.loadVideoById(s.video);
+      markPlaying();
+    }
   }
 
   // 動画を隠す: collapses the player's height instead of display:none, so the iframe stays "visible" to the
@@ -1014,8 +1038,10 @@
   }
 
   // Polls instead of relying on player events, since YT doesn't fire anything while a video just keeps playing.
+  // Only tracks time-based matching in "reel" mode - a "single" song's own video has an unrelated timeline,
+  // so it just stays marked as playing (set directly in playSong) until another song is played.
   setInterval(() => {
-    if (!ytReady || typeof ytPlayer.getPlayerState !== "function" || ytPlayer.getPlayerState() !== 1) return;
+    if (ytMode !== "reel" || !ytReady || typeof ytPlayer.getPlayerState !== "function" || ytPlayer.getPlayerState() !== 1) return;
     const t = ytPlayer.getCurrentTime();
     const hit = SONGS.find((s) => t >= s.start && t < s.end);
     const no = hit ? hit.no : null;

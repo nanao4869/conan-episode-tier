@@ -224,7 +224,7 @@ body.op-page .item.op-playing { outline: 3px solid #ffd54a; outline-offset: -1px
 }
 .pool-filters input { flex: 1 1 auto; }
 .pool-filters select { flex: 0 0 auto; max-width: 46%; }
-.pool-grid { display: flex; flex-wrap: wrap; align-content: flex-start; padding: 8px; overflow-y: auto; overscroll-behavior: contain; min-height: 120px; }
+.pool-grid { display: flex; flex-wrap: wrap; align-content: flex-start; padding: 8px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; min-height: 120px; }
 .pool-empty { width: 100%; padding: 28px 12px; text-align: center; color: var(--muted); font-size: 13px; }
 
 /* ---------- dialogs ---------- */
@@ -681,7 +681,12 @@ body.chars-page .item .ch-art img { display: block; width: 76px; height: 76px; o
 body.chars-page .item .ch-art img.ch-small { width: 64px; height: 64px; margin: 6px 0; image-rendering: pixelated; border-radius: 0; }
 body.chars-page .item .ch-name { font-size: 12px; font-weight: 800; line-height: 1.2; text-align: center; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; }
 body.chars-page .board.exporting { --tile: 92px; }
-.pool-group { flex: 0 0 100%; grid-column: 1 / -1; margin: 8px 2px 4px; padding: 0 0 3px 8px; border-left: 4px solid var(--red); font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
+.pool-group { flex: 0 0 100%; grid-column: 1 / -1; margin: 8px 0 4px; padding: 0 0 3px 8px; border-left: 4px solid var(--red); font-size: 13px; font-weight: 800; color: var(--text); line-height: 1.3; }
 .pool-group:first-child { margin-top: 2px; }
 .detail-link-inline { color: #7db8ff; }
 #dSource { margin-top: 6px; }
+body.chars-page .item { height: var(--item-h); }
+body.chars-page .tier-items { gap: 6px; padding: 3px; align-content: center; min-height: calc(var(--item-h) + 6px); }
+.ch-detail-head { display: flex; align-items: center; gap: 14px; margin-right: 36px; }
+.ch-detail-head img { flex: 0 0 auto; width: 96px; height: 96px; object-fit: cover; border-radius: 12px; background: #24242b; }
+.ch-detail-head .detail-title { margin-top: 2px; }

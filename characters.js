@@ -1,17 +1,12 @@
 (() => {
   "use strict";
 
-  // start/end (seconds) mark each song's slice of the linked video; end = next song's start (last song has none).
-  // Songs added after the video was made (no "start") aren't in it at all - they just don't get a play button.
-  const SONGS = (window.OPENINGS || []).map((s, i, arr) => ({
-    ...s,
-    end: arr[i + 1] && arr[i + 1].start != null ? arr[i + 1].start : Infinity,
-  }));
+  const SONGS = (window.CHAR_TIER || []).map((c) => ({ ...c, no: c.id, title: c.name }));
+  const GROUP_NAMES = window.CHAR_GROUPS || [];
   const BY_NO = new Map(SONGS.map((s) => [s.no, s]));
-  const VIDEO_ID = window.OP_VIDEO_ID;
 
-  const STORAGE_KEY = "conanOpeningTier.v1";
-  const DEFAULT_TITLE = "好きな名探偵コナンの主題歌 Tier表";
+  const STORAGE_KEY = "conanCharacterTier.v1";
+  const DEFAULT_TITLE = "好きな名探偵コナンのキャラクター Tier表";
   const DEFAULT_TIERS = [
     { name: "S\n最高", color: "#ff7f7f" },
     { name: "A", color: "#ffbf7f" },
@@ -23,23 +18,6 @@
     "#ff7f7f", "#ffbf7f", "#ffdf7f", "#ffff7f", "#bfff7f", "#7fff7f", "#7fffbf", "#7fffff",
     "#7fbfff", "#7f7fff", "#bf7fff", "#ff7fff", "#ff7fbf", "#f4f4f4", "#cfcfcf", "#858585",
   ];
-  // Every song gets a plain colored card (there is no official per-song art to show) - one color per artist,
-  // so the same artist's songs are visually grouped, not a fresh color for every one of the 133 songs.
-  // A separate, more muted palette from the row colors above (those need to stay bright/candy-toned to match
-  // the other two Tier makers; these just need to look good as ~130 small cards next to each other).
-  const CARD_PALETTE = [
-    "#d65a5a", "#d68a4a", "#c9a63c", "#8fae3f", "#3f9e6b", "#3aa39c", "#3f88b8", "#4f6fc0",
-    "#6f5fc0", "#9c52ac", "#b8508a", "#5a6472",
-  ];
-  const artistColor = (() => {
-    const map = new Map();
-    let i = 0;
-    return (artist) => {
-      if (!map.has(artist)) map.set(artist, CARD_PALETTE[i++ % CARD_PALETTE.length]);
-      return map.get(artist);
-    };
-  })();
-
   const $ = (id) => document.getElementById(id);
   const boardEl = $("board");
   const tiersEl = $("tiers");
@@ -189,35 +167,21 @@
     d.dataset.no = s.no;
     d.tabIndex = 0;
     d.setAttribute("role", "button");
-    d.title = `${s.artist}「${s.title}」`;
+    d.title = s.name;
 
     const art = document.createElement("div");
-    art.className = "op-art";
-    art.style.backgroundColor = artistColor(s.artist); // backgroundColor only, so the CSS gradient/accent-bar (background-image) still shows on top
-    art.style.color = textColorFor(artistColor(s.artist));
-    const artist = document.createElement("span");
-    artist.className = "op-artist";
-    artist.textContent = s.artist;
-    const title = document.createElement("span");
-    title.className = "op-title";
-    title.textContent = s.title;
-    art.append(artist, title);
+    art.className = "ch-art";
+    const img = document.createElement("img");
+    img.src = s.img || s.icon;
+    if (!s.img) img.className = "ch-small"; // 公式画像がないキャラは32pxのアイコン
+    img.alt = "";
+    img.draggable = false;
+    const name = document.createElement("span");
+    name.className = "ch-name";
+    name.textContent = s.name;
+    art.append(img, name);
 
     d.append(art);
-    if (s.start != null || s.video) {
-      const play = document.createElement("button");
-      play.type = "button";
-      play.className = "op-play no-export";
-      play.setAttribute("aria-label", "この曲を再生");
-      play.textContent = "▶";
-      // Keep this button out of the drag/tap-to-open system: it has its own job.
-      play.addEventListener("pointerdown", (e) => e.stopPropagation());
-      play.addEventListener("click", (e) => {
-        e.stopPropagation();
-        playSong(s.no);
-      });
-      d.append(play);
-    }
     itemCache.set(s.no, d);
     return d;
   }
@@ -297,14 +261,6 @@
     tiersEl.replaceChildren(...rows);
   }
 
-  let newestFirst = false;
-  const sortBtn = $("sortBtn");
-  sortBtn.addEventListener("click", () => {
-    newestFirst = !newestFirst;
-    sortBtn.textContent = newestFirst ? "並び：逆順" : "並び：放送順";
-    renderPool();
-  });
-
   // モバイルでは一覧がずっと画面の4割強を占めるので、タイトルバーを上下にドラッグして高さを変えられるように
   // する（ボタンは、最小の高さ⇄既定の高さ（CSSの42dvh）を切り替えるショートカット）。
   const POOL_MIN_H = 78; // just the title row (+ grab handle) - the filters below are hidden at this height (.is-min)
@@ -348,90 +304,37 @@
     $("poolCollapseBtn").textContent = collapse ? "表示" : "隠す";
   });
 
-  // Hiragana/katakana and full/half width shouldn't matter when searching.
-  const norm = (s) =>
-    s
-      .normalize("NFKC")
-      .toLowerCase()
-      .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
-  const HAYSTACK = new Map(SONGS.map((s) => [s.no, norm(`${s.title} ${s.artist}`)]));
-
-  // 年代（放送開始年から算出、10年区切り）。放送期間が分かっていない曲は「年代不明」。
-  const eraOf = (s) => {
-    const m = s.period && /(\d{4})年/.exec(s.period);
-    return m ? `${Math.floor(+m[1] / 10) * 10}年代` : "年代不明";
-  };
-  const ERA = new Map(SONGS.map((s) => [s.no, eraOf(s)]));
-  const qEl = $("q");
-  let filterTimer = 0;
-  qEl.addEventListener("input", () => {
-    clearTimeout(filterTimer);
-    filterTimer = setTimeout(renderPool, 120);
-  });
-
-  // アーティストで絞り込み: most songs first (so 倉木麻衣 etc. sort near the top), ties broken alphabetically.
-  const artistFilterEl = $("artistFilter");
-  (() => {
-    const count = new Map();
-    for (const s of SONGS) count.set(s.artist, (count.get(s.artist) || 0) + 1);
-    const artists = [...count.keys()].sort((a, b) => count.get(b) - count.get(a) || a.localeCompare(b, "ja"));
-    for (const a of artists) {
-      const opt = document.createElement("option");
-      opt.value = a;
-      opt.textContent = `${a}（${count.get(a)}）`;
-      artistFilterEl.append(opt);
-    }
-  })();
-  artistFilterEl.addEventListener("change", renderPool);
-
-  // 年代で絞り込み: 古い順（1990年代→…）、「年代不明」は最後。
-  const eraFilterEl = $("eraFilter");
-  (() => {
-    const count = new Map();
-    for (const s of SONGS) count.set(ERA.get(s.no), (count.get(ERA.get(s.no)) || 0) + 1);
-    const eras = [...count.keys()].sort((a, b) => (a === "年代不明") - (b === "年代不明") || a.localeCompare(b, "ja"));
-    for (const e of eras) {
-      const opt = document.createElement("option");
-      opt.value = e;
-      opt.textContent = `${e}（${count.get(e)}）`;
-      eraFilterEl.append(opt);
-    }
-  })();
-  eraFilterEl.addEventListener("change", renderPool);
-
   function renderPool() {
     const placed = new Set();
     state.tiers.forEach((t) => t.items.forEach((n) => placed.add(n)));
-    const artist = artistFilterEl.value;
-    const era = eraFilterEl.value;
-    const q = norm(qEl.value.trim());
-    const filtering = artist || era || q;
-    const passes = (s) =>
-      (!artist || s.artist === artist) && (!era || ERA.get(s.no) === era) && (!q || HAYSTACK.get(s.no).includes(q));
     const frag = document.createDocumentFragment();
     let shown = 0;
     let remaining = 0;
     const foundSet = new Set();
-    for (const s of newestFirst ? [...SONGS].reverse() : SONGS) {
-      if (placed.has(s.no)) {
-        if (filtering && passes(s)) foundSet.add(s.no);
-        continue;
-      }
+    let lastGroup = null;
+    // 所属グループごと（グループ内は登場話数の多い順）
+    for (const s of [...SONGS].sort((a, b) => a.g - b.g || b.count - a.count || a.no - b.no)) {
+      if (placed.has(s.no)) continue;
       remaining++;
-      if (filtering && !passes(s)) continue;
       shown++;
+      if (s.g !== lastGroup) {
+        lastGroup = s.g;
+        const h = document.createElement("div");
+        h.className = "pool-group";
+        h.textContent = GROUP_NAMES[s.g] || "その他";
+        frag.append(h);
+      }
       frag.append(itemEl(s));
     }
     if (shown === 0) {
       const p = document.createElement("p");
       p.className = "pool-empty";
-      p.textContent = remaining === 0 ? "すべての曲をTierに入れました！" : "該当する曲がありません";
+      p.textContent = remaining === 0 ? "すべてのキャラクターをTierに入れました！" : "該当するキャラクターがいません";
       frag.append(p);
     }
     poolGrid.replaceChildren(frag);
     for (const [no, el] of itemCache) el.classList.toggle("found", foundSet.has(no));
-    poolCount.textContent = filtering ? `${shown}件表示 ／ 未分類 ${remaining}件` : `未分類 ${remaining} / ${SONGS.length}`;
-    markPlaying(); // playing-highlight is on the actual tile elements, which just got reattached
+    poolCount.textContent = `未分類 ${remaining} / ${SONGS.length}`;
   }
 
   function render() {
@@ -642,13 +545,24 @@
   function openDetail(no) {
     const s = BY_NO.get(no);
     if (!s) return;
+    $("dImg").src = s.img || s.icon;
     $("dNo").textContent = `No.${s.no}`;
-    $("dTitle").textContent = s.title;
-    $("dFile").textContent = s.artist;
-    $("dPeriod").textContent = s.period ? `放送：${s.epRange}（${s.period}）` : "";
-    $("dPeriod").hidden = !s.period;
-    $("dPlayBtn").hidden = s.start == null && !s.video;
-    $("dPlayBtn").onclick = () => playSong(no);
+    $("dTitle").textContent = s.name;
+    $("dSummary").textContent = s.profile || "";
+    $("dSummary").hidden = !s.profile;
+    const src = $("dSource");
+    src.replaceChildren();
+    if (s.link) {
+      src.append(`出典：${s.from}　`);
+      const a = document.createElement("a");
+      a.href = s.link;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "detail-link-inline";
+      a.textContent = "公式ページで見る";
+      src.append(a);
+    }
+    src.hidden = !s.link;
 
     const cur = tierOf(no);
     const chips = $("dChips");
@@ -763,7 +677,7 @@
   $("tDelete").addEventListener("click", () => {
     const t = findTier(editingId);
     if (!t || state.tiers.length <= 1) return;
-    if (t.items.length && !confirm(`「${t.name.replace(/\n/g, " ")}」の行を削除しますか？\n中の曲は未分類に戻ります。`)) return;
+    if (t.items.length && !confirm(`「${t.name.replace(/\n/g, " ")}」の行を削除しますか？\n中のキャラクターは未分類に戻ります。`)) return;
     track(() => {
       state.tiers = state.tiers.filter((x) => x.id !== editingId);
     });
@@ -810,14 +724,14 @@
 
   $("clearAllBtn").addEventListener("click", () => {
     if (!state.tiers.some((t) => t.items.length)) return;
-    if (!confirm("すべての曲を未分類に戻しますか？（行の名前と色は残ります）")) return;
+    if (!confirm("すべてのキャラクターを未分類に戻しますか？（行の名前と色は残ります）")) return;
     track(() => state.tiers.forEach((t) => (t.items = [])));
     save();
     render();
   });
 
   $("resetBtn").addEventListener("click", () => {
-    if (!confirm("Tier表を初期状態に戻しますか？\n並べた曲も行の設定もすべて消えます。")) return;
+    if (!confirm("Tier表を初期状態に戻しますか？\n並べたキャラクターも行の設定もすべて消えます。")) return;
     track(() => {
       state = defaultState();
     });
@@ -869,7 +783,7 @@
     clone.removeAttribute("id");
     clone.classList.add("exporting");
     clone.querySelectorAll(".no-export").forEach((n) => n.remove());
-    clone.querySelectorAll(".item").forEach((n) => n.classList.remove("drag-source", "op-playing"));
+    clone.querySelectorAll(".item").forEach((n) => n.classList.remove("drag-source"));
     clone.querySelector(".list-title").removeAttribute("contenteditable");
     stage.append(clone);
     document.body.append(stage);
@@ -914,7 +828,7 @@
     }
   }
 
-  const imageName = (format) => `conan_opening_tier_${dateStamp()}.${format === "jpeg" ? "jpg" : "png"}`;
+  const imageName = (format) => `conan_character_tier_${dateStamp()}.${format === "jpeg" ? "jpg" : "png"}`;
   function downloadImage(dataUrl, format, name = imageName(format)) {
     const a = document.createElement("a");
     a.download = name;
@@ -922,7 +836,7 @@
     a.click();
   }
 
-  const FORMAT_KEY = "conanOpeningTier.format";
+  const FORMAT_KEY = "conanCharacterTier.format";
   let saveFormat = "png";
   try {
     if (localStorage.getItem(FORMAT_KEY) === "jpeg") saveFormat = "jpeg";
@@ -946,7 +860,7 @@
     if (dataUrl) downloadImage(dataUrl, format);
   });
 
-  const SITE_TEXT = "名探偵コナンの歴代主題歌でTier表が作れるツールです！動画を見ながら操作できます #コナン主題歌Tier表 #名探偵コナン";
+  const SITE_TEXT = "名探偵コナンのキャラクターをTier表にして、画像で保存できるツールです！ #コナンキャラTier表 #名探偵コナン";
   $("postXBtn").addEventListener("click", () => {
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SITE_TEXT)}&url=${encodeURIComponent(location.origin + location.pathname)}`;
     window.open(url, "_blank", "noopener");
@@ -955,7 +869,7 @@
 
   /* ------------------------------------------------------ export / import */
 
-  const EXPORT_APP = "conan-opening-tier";
+  const EXPORT_APP = "conan-character-tier";
   const IMPORT_MAX_BYTES = 2 * 1024 * 1024;
 
   function exportData() {
@@ -968,7 +882,7 @@
     };
     const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
     const a = document.createElement("a");
-    a.download = `conan_opening_tier_${dateStamp()}.json`;
+    a.download = `conan_character_tier_${dateStamp()}.json`;
     a.href = url;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -1010,87 +924,6 @@
     await importFile(file);
     importInput.value = "";
   });
-
-  /* --------------------------------------------------------- YouTube player */
-
-  // Play/pause, seek, and volume are all left to YouTube's own player UI (playerVars has no `controls: 0`),
-  // rather than rebuilding them here - it already does this well, and it's what people expect from a YouTube embed.
-  //
-  // Two modes share the one embedded player:
-  // - "reel": the 133-song compilation video (VIDEO_ID), seeking to each song's timestamp.
-  // - "single": a song added after the reel was made has its own official PV instead (song.video), loaded
-  //   in full. Playing a reel song again swaps the reel video back in.
-  let ytPlayer = null;
-  let ytReady = false;
-  let ytMode = "reel";
-  let playingNo = null;
-
-  window.onYouTubeIframeAPIReady = () => {
-    ytPlayer = new YT.Player("ytPlayer", {
-      videoId: VIDEO_ID,
-      playerVars: { rel: 0 },
-      events: {
-        onReady: () => { ytReady = true; },
-      },
-    });
-  };
-  const ytScript = document.createElement("script");
-  ytScript.src = "https://www.youtube.com/iframe_api";
-  document.head.append(ytScript);
-
-  function playSong(no) {
-    const s = BY_NO.get(no);
-    if (!s || !ytReady) return;
-    if (s.start != null) {
-      if (ytMode !== "reel") {
-        ytMode = "reel";
-        ytPlayer.loadVideoById(VIDEO_ID);
-      }
-      ytPlayer.seekTo(s.start, true);
-      ytPlayer.playVideo();
-    } else if (s.video) {
-      ytMode = "single";
-      playingNo = no;
-      ytPlayer.loadVideoById(s.video);
-      markPlaying();
-    }
-  }
-
-  // 動画を隠す: collapses the player's height instead of display:none, so the iframe stays "visible" to the
-  // browser and audio keeps playing while the video itself takes no screen space (mainly for phones, where
-  // the video was taking up too much of the screen).
-  const YT_HIDE_KEY = "conanOpeningTier.hideVideo";
-  const ytWrap = $("ytWrap");
-  const ytHideBtn = $("ytHideBtn");
-  function setVideoHidden(hidden) {
-    ytWrap.classList.toggle("is-hidden", hidden);
-    ytHideBtn.textContent = hidden ? "動画を表示" : "動画を隠す";
-    try { localStorage.setItem(YT_HIDE_KEY, hidden ? "1" : "0"); } catch (e) { /* not remembered, still works */ }
-  }
-  ytHideBtn.addEventListener("click", () => setVideoHidden(!ytWrap.classList.contains("is-hidden")));
-  let hideVideoPref = false;
-  try { hideVideoPref = localStorage.getItem(YT_HIDE_KEY) === "1"; } catch (e) { /* default to shown */ }
-  setVideoHidden(hideVideoPref);
-
-  function markPlaying() {
-    for (const [no, el] of itemCache) el.classList.toggle("op-playing", no === playingNo);
-    const s = playingNo != null ? BY_NO.get(playingNo) : null;
-    $("ytCaption").textContent = s ? `再生中：${s.artist}「${s.title}」` : "再生中の曲はありません";
-  }
-
-  // Polls instead of relying on player events, since YT doesn't fire anything while a video just keeps playing.
-  // Only tracks time-based matching in "reel" mode - a "single" song's own video has an unrelated timeline,
-  // so it just stays marked as playing (set directly in playSong) until another song is played.
-  setInterval(() => {
-    if (ytMode !== "reel" || !ytReady || typeof ytPlayer.getPlayerState !== "function" || ytPlayer.getPlayerState() !== 1) return;
-    const t = ytPlayer.getCurrentTime();
-    const hit = SONGS.find((s) => t >= s.start && t < s.end);
-    const no = hit ? hit.no : null;
-    if (no !== playingNo) {
-      playingNo = no;
-      markPlaying();
-    }
-  }, 1000);
 
   /* ------------------------------------------------------------------ boot */
 

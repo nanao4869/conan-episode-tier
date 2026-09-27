@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.4.5">
+<link rel="stylesheet" href="style.css?v=1.4.6">
 </head>
 <body class="op-page">
 
@@ -85,6 +85,7 @@
         <div class="pool-filters">
           <input type="search" id="q" placeholder="曲名・アーティストで検索" autocomplete="off" aria-label="検索">
           <select id="artistFilter" aria-label="アーティストで絞り込み"><option value="">すべてのアーティスト</option></select>
+          <select id="eraFilter" aria-label="放送年代で絞り込み"><option value="">すべての年代</option></select>
         </div>
       </div>
       <div class="yt-wrap" id="ytWrap"><div id="ytPlayer"></div></div>
@@ -116,6 +117,13 @@
       <span>長編4作・短編56作の全60作を、あらすじやWikipedia・青空文庫へのリンク付きでTier表にできます。</span>
     </span>
   </a>
+  <a class="tool-card" href="characters.html">
+    <img src="og-image-characters.png" alt="" width="240" height="126" loading="lazy">
+    <span class="tool-card-body">
+      <strong>コナン キャラクターTier表メーカー <em>べーた</em></strong>
+      <span>キャラクター78人を、ドラッグでTier表に並べられます。</span>
+    </span>
+  </a>
   <a class="tool-card" href="https://nanao4869.github.io/conan-profile-card/">
     <img src="https://nanao4869.github.io/conan-profile-card/og-image.png" alt="" width="240" height="126" loading="lazy">
     <span class="tool-card-body">
@@ -128,7 +136,7 @@
 <footer class="site-footer">
   <p>動画の埋め込みはYouTubeの公式プレーヤーを利用しており、音源・映像はYouTube上のものをそのまま再生しています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.4.5</p>
+  <p class="version">Ver 1.4.6</p>
 </footer>
 
 <!-- 主題歌詳細 -->
@@ -169,7 +177,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/openings.js?v=1.4.5"></script>
-<script src="opening.js?v=1.4.5"></script>
+<script src="data/openings.js?v=1.4.6"></script>
+<script src="opening.js?v=1.4.6"></script>
 </body>
 </html>

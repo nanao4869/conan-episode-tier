@@ -218,7 +218,7 @@ body.op-page .item.op-playing { outline: 3px solid #ffd54a; outline-offset: -1px
 .pool-title { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
 .pool-title h2 { margin: 0; font-size: 15px; }
 .pool-count { font-size: 12px; color: var(--muted); }
-.pool-filters { display: flex; gap: 6px; }
+.pool-filters { display: flex; flex-wrap: wrap; gap: 6px; }
 .pool-filters input, .pool-filters select {
   min-width: 0; padding: 7px 9px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line2); background: #121216;
 }

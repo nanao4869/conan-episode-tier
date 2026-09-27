@@ -348,6 +348,20 @@
     $("poolCollapseBtn").textContent = collapse ? "表示" : "隠す";
   });
 
+  // Hiragana/katakana and full/half width shouldn't matter when searching.
+  const norm = (s) =>
+    s
+      .normalize("NFKC")
+      .toLowerCase()
+      .replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
+  const HAYSTACK = new Map(SONGS.map((s) => [s.no, norm(`${s.title} ${s.artist}`)]));
+  const qEl = $("q");
+  let filterTimer = 0;
+  qEl.addEventListener("input", () => {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(renderPool, 120);
+  });
+
   // アーティストで絞り込み: most songs first (so 倉木麻衣 etc. sort near the top), ties broken alphabetically.
   const artistFilterEl = $("artistFilter");
   (() => {
@@ -367,17 +381,20 @@
     const placed = new Set();
     state.tiers.forEach((t) => t.items.forEach((n) => placed.add(n)));
     const artist = artistFilterEl.value;
+    const q = norm(qEl.value.trim());
+    const filtering = artist || q;
+    const passes = (s) => (!artist || s.artist === artist) && (!q || HAYSTACK.get(s.no).includes(q));
     const frag = document.createDocumentFragment();
     let shown = 0;
     let remaining = 0;
     const foundSet = new Set();
     for (const s of newestFirst ? [...SONGS].reverse() : SONGS) {
       if (placed.has(s.no)) {
-        if (artist && s.artist === artist) foundSet.add(s.no);
+        if (filtering && passes(s)) foundSet.add(s.no);
         continue;
       }
       remaining++;
-      if (artist && s.artist !== artist) continue;
+      if (filtering && !passes(s)) continue;
       shown++;
       frag.append(itemEl(s));
     }
@@ -389,7 +406,7 @@
     }
     poolGrid.replaceChildren(frag);
     for (const [no, el] of itemCache) el.classList.toggle("found", foundSet.has(no));
-    poolCount.textContent = artist ? `${shown}件表示 ／ 未分類 ${remaining}件` : `未分類 ${remaining} / ${SONGS.length}`;
+    poolCount.textContent = filtering ? `${shown}件表示 ／ 未分類 ${remaining}件` : `未分類 ${remaining} / ${SONGS.length}`;
     markPlaying(); // playing-highlight is on the actual tile elements, which just got reattached
   }
 

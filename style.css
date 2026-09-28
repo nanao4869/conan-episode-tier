@@ -228,6 +228,9 @@ body.op-page .item .op-age-badge {
 .age-note { font-size: 11px; color: var(--muted); white-space: nowrap; }
 @media (max-width: 520px) {
   body.op-page .pool-grid { --tile: calc((100vw - 16px) / 4 - 1px); }
+  /* .tier-items has the label column (var(--label-w), 64px on narrow screens) eating into its width too,
+     so it needs its own measured overhead, not the pool-grid one - 144px was measured live at 390px width. */
+  body.op-page .tier-items { --tile: calc((100vw - 144px) / 4 - 1px); }
 }
 /* flex-shrink:0 so the video keeps its full 16:9 height when the pool's height is capped on phones (.pool-grid,
    which already scrolls, is the one that should give up space, not the player) */
@@ -664,6 +667,10 @@ body.viewing .list-title:hover { background: none; }
 body.op-page.viewing .pool { display: flex; }
 body.op-page.viewing #poolHead,
 body.op-page.viewing #poolGrid { display: none; }
+/* on phones .pool is normally a fixed-height (42dvh) bottom sheet sized for the filters+grid it usually holds;
+   with those hidden, only the compact video section is left, so let the sheet shrink to fit it instead of
+   leaving empty space below the video. */
+body.op-page.viewing .pool { height: auto; }
 
 /* ---------- other tools (footer cards) ---------- */
 .other-tools { max-width: 720px; margin: 36px auto 0; padding: 0 16px; }

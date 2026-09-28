@@ -254,6 +254,10 @@ body.op-page .item .op-age-badge {
 .yt-vol-label { display: inline-flex; align-items: center; gap: 5px; padding: 0 6px 0 8px; color: var(--muted); border-left: 1px solid var(--line2); margin-left: 2px; }
 .yt-vol-label svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
 .yt-vol { width: 80px; accent-color: var(--blue); height: 16px; }
+/* スマホ幅ではYouTube本体のシーク・音量操作で十分なので、補助用のコントロール行は表示しない */
+@media (max-width: 520px) {
+  .yt-controls-row { display: none; }
+}
 
 .ghost {
   position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; opacity: .92;
@@ -273,8 +277,9 @@ body.op-page .item .op-age-badge {
 .pool.over { outline: 2px dashed #6cb2ff; outline-offset: -2px; }
 .pool-head { padding: 10px 12px; border-bottom: 1px solid var(--line2); background: var(--panel2); }
 .pool-title { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-.pool-title h2 { margin: 0; font-size: 15px; }
-.pool-count { font-size: 12px; color: var(--muted); }
+.pool-title h2 { margin: 0; font-size: 15px; flex: 0 0 auto; }
+/* Truncates instead of wrapping so a long "確認済み N件" suffix can't push the buttons onto their own line. */
+.pool-count { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
 .pool-filters { display: flex; flex-wrap: wrap; gap: 6px; }
 .pool-filters input, .pool-filters select, .dlg-body select {
   min-width: 0; padding: 7px 9px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line2); background: #121216; color: var(--text);
@@ -484,7 +489,10 @@ a.an-title:hover { color: #7db8ff; }
 .found-btn { appearance: none; border: 1px solid #b8962e; background: rgba(255, 213, 74, .16); color: #ffe38a; border-radius: 999px; padding: 1px 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .found-btn:hover { background: rgba(255, 213, 74, .3); }
 .found-btn[hidden] { display: none; }
-.pool-title { flex-wrap: wrap; row-gap: 4px; }
+/* nowrap (not wrap): flex-wrap decides based on each item's unshrunk natural width, so a long
+   poolCount text (e.g. "確認済み N件") would push the buttons onto their own line even though
+   .pool-count is set up to just shrink/truncate in place - nowrap makes that shrink actually happen. */
+.pool-title { flex-wrap: nowrap; }
 
 /* ---------- character stats ---------- */
 .stats-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 10px 0 4px; }

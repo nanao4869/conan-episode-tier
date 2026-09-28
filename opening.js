@@ -936,6 +936,7 @@
       syncSeenBtn();
       renderPool();
     };
+    seenBtn.hidden = viewMode; // 「確認済み」は自分の進捗の印なので、友達の表を見ている間は出さない
 
     const cur = tierOf(no);
     const chips = $("dChips");

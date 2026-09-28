@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.0.9">
+<link rel="stylesheet" href="style.css?v=1.1.0">
 </head>
 <body class="op-page holmes-page">
 
@@ -49,6 +49,12 @@
   <div class="workspace">
 
     <section class="board-col">
+      <div id="viewBanner" class="view-banner" hidden>
+        <span id="viewBannerText"></span>
+        <span class="view-banner-btns">
+          <button type="button" class="btn btn-primary" id="viewExitBtn">自分の表に戻る</button>
+        </span>
+      </div>
       <div id="board" class="board">
         <div id="listTitle" class="list-title" contenteditable="true" spellcheck="false" role="textbox" aria-label="Tier表のタイトル" data-placeholder="タイトルを入力"></div>
         <div id="tiers" class="tiers"></div>
@@ -70,6 +76,10 @@
         <button type="button" class="btn btn-ghost" id="importBtn" title="エクスポートしたJSONファイルから、Tier表を復元します">インポート</button>
         <input type="file" id="importFile" accept=".json,application/json" hidden>
         <span class="data-hint">バックアップや、他の端末への引き継ぎに使えます</span>
+      </div>
+      <div class="board-actions data-actions">
+        <button type="button" class="btn btn-primary" id="linkCopyBtn">自分の表のリンクをコピー</button>
+        <span class="data-hint">リンクを開くと、友達にも同じ表が表示されます（表の中身はリンクに入っていて、サーバーには送られません）。Xへの投稿は上の「Xに投稿」からもできます。</span>
       </div>
       </div>
     </section>
@@ -129,7 +139,7 @@
 <footer class="site-footer">
   <p>シャーロック・ホームズはアーサー・コナン・ドイルの作品です。あらすじは当サイトによる独自の紹介文で、原文・訳文は掲載していません。</p>
   <p>作品のリンク先：Wikipedia（日本語版）／青空文庫。非公式のファンツールです。</p>
-  <p class="version">Ver 1.0.9</p>
+  <p class="version">Ver 1.1.0</p>
 </footer>
 
 <!-- 作品の詳細 -->
@@ -168,10 +178,27 @@
   </div>
 </dialog>
 
+<!-- Xに投稿: 2 choices, so the long board link never comes as a surprise -->
+<dialog id="postDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">Xに投稿</h3>
+    <button type="button" class="post-opt" id="postSiteBtn">
+      <strong>このサイトを紹介する</strong>
+      <span>このツールのURLだけを投稿します。</span>
+    </button>
+    <button type="button" class="post-opt" id="postBoardBtn">
+      <strong>作った表を投稿する</strong>
+      <span>表の情報が入ったリンクを付けて投稿します。<br>リンクを開くと、誰でも作成した表を見られます。</span>
+      <small id="postBoardNote" hidden>表に作品を入れると、選べます。</small>
+    </button>
+  </div>
+</dialog>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/holmes.js?v=1.0.9"></script>
-<script src="holmes.js?v=1.0.9"></script>
+<script src="data/holmes.js?v=1.1.0"></script>
+<script src="holmes.js?v=1.1.0"></script>
 </body>
 </html>

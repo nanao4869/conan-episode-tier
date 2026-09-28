@@ -117,8 +117,11 @@
   }
 
   let state = loadState() || defaultState();
+  let viewMode = false;
+  let ownState = null;
 
   function save() {
+    if (viewMode) return; // never write a friend's board over our own
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
@@ -188,6 +191,7 @@
   const tierOf = (no) => state.tiers.find((t) => t.items.includes(no));
 
   function moveSong(no, tierId, index) {
+    if (viewMode) return; // never move anything in a friend's board
     track(() => {
       state.tiers.forEach((t) => {
         const i = t.items.indexOf(no);
@@ -214,6 +218,107 @@
     render();
     toast("放送順に並び替えました");
   });
+
+  /* --- share a board as a link (no server: the board is inside the link) --- */
+
+  const SHARE_PREFIX = "#c=";
+  const SHARE_MAX_CHARS = 20000;
+  const toB64u = (bytes) => {
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  };
+  const fromB64u = (str) => Uint8Array.from(atob(str.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+  const pipeBytes = async (bytes, stream) => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+
+  async function encodeBoard() {
+    const raw = new TextEncoder().encode(JSON.stringify({ t: state.title, r: state.tiers.map((t) => [t.name, t.color, t.items]) }));
+    if (typeof CompressionStream === "undefined") return "0" + toB64u(raw);
+    return "1" + toB64u(await pipeBytes(raw, new CompressionStream("deflate-raw")));
+  }
+
+  // Returns a sanitized board ({ title, tiers }) or null. Anything from a link is untrusted, so it goes through sanitize().
+  async function decodeBoard(payload) {
+    try {
+      if (!payload || payload.length > SHARE_MAX_CHARS) return null;
+      let bytes = fromB64u(payload.slice(1));
+      if (payload[0] === "1") bytes = await pipeBytes(bytes, new DecompressionStream("deflate-raw"));
+      else if (payload[0] !== "0") return null;
+      if (bytes.length > 400000) return null;
+      const o = JSON.parse(new TextDecoder().decode(bytes));
+      if (!o || !Array.isArray(o.r)) return null;
+      return sanitize({ title: o.t, tiers: o.r.map((t) => ({ name: (t || [])[0], color: (t || [])[1], items: (t || [])[2] })) });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const shareBase = () => location.href.split("#")[0];
+
+  async function myShareLink() {
+    if (!state.tiers.some((t) => t.items.length)) {
+      toast("表に曲を入れてから、リンクを作ってください");
+      return null;
+    }
+    return shareBase() + SHARE_PREFIX + (await encodeBoard());
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.cssText = "position:fixed;left:-9999px";
+      document.body.append(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    }
+  }
+
+  $("linkCopyBtn").addEventListener("click", async () => {
+    const url = await myShareLink();
+    if (url) toast((await copyText(url)) ? "リンクをコピーしました。Xなどに貼って共有できます" : "コピーできませんでした。もう一度お試しください");
+  });
+  // Friend's link: replaces the view with their board (read-only). Nothing is saved over our own board -
+  // save() is guarded by viewMode, so leaving view mode always restores exactly what we had.
+  function enterView(board) {
+    if (!viewMode) ownState = state;
+    viewMode = true;
+    state = board;
+    document.body.classList.add("viewing");
+    titleEl.contentEditable = "false";
+    titleEl.textContent = state.title;
+    const t = (board.title || "").trim();
+    $("viewBannerText").textContent = t ? `「${t}」を表示中（閲覧モード）` : "友達の表を表示中（閲覧モード）";
+    $("viewBanner").hidden = false;
+    render();
+    window.scrollTo(0, 0);
+  }
+  function exitView() {
+    if (!viewMode) return;
+    state = ownState;
+    ownState = null;
+    viewMode = false;
+    document.body.classList.remove("viewing");
+    titleEl.contentEditable = "true";
+    titleEl.textContent = state.title;
+    $("viewBanner").hidden = true;
+    render();
+  }
+  $("viewExitBtn").addEventListener("click", exitView);
+
+  async function openIncomingShare() {
+    if (!location.hash.startsWith(SHARE_PREFIX)) return;
+    const payload = location.hash.slice(SHARE_PREFIX.length);
+    history.replaceState(null, "", location.pathname + location.search); // the link is one-shot: a reload shouldn't re-open it
+    const board = await decodeBoard(payload);
+    if (!board) return toast("リンクを読み込めませんでした");
+    enterView(board);
+  }
 
   /* -------------------------------------------------------------- rendering */
 
@@ -1128,11 +1233,33 @@
     if (dataUrl) downloadImage(dataUrl, format);
   });
 
+  // Two ways to post, so the long board link never comes as a surprise: introduce the site (plain URL), or post the board (link with its contents).
   const SITE_TEXT = "名探偵コナンの歴代主題歌でTier表が作れるツールです！動画を見ながら操作できます #コナン主題歌Tier表 #名探偵コナン";
+  const postDlg = $("postDialog");
+  const openIntent = (text, url) => {
+    let u = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    if (url) u += `&url=${encodeURIComponent(url)}`;
+    window.open(u, "_blank", "noopener"); // called straight from a click, so popup blockers allow it
+  };
+
   $("postXBtn").addEventListener("click", () => {
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(SITE_TEXT)}&url=${encodeURIComponent(location.origin + location.pathname)}`;
-    window.open(url, "_blank", "noopener");
-    toast("画像を投稿に添付する場合は、先に「画像として保存」しておいてください");
+    const empty = !state.tiers.some((t) => t.items.length);
+    $("postBoardBtn").disabled = empty;
+    $("postBoardNote").hidden = !empty; // only explains why the choice is off
+    postDlg.showModal();
+  });
+  $("postSiteBtn").addEventListener("click", () => {
+    postDlg.close();
+    openIntent(SITE_TEXT, location.origin + location.pathname);
+    toast("Xの投稿画面を開きました。画像を投稿に添付する場合は、先に「画像として保存」しておいてください");
+  });
+  $("postBoardBtn").addEventListener("click", async () => {
+    postDlg.close();
+    const url = await myShareLink();
+    if (!url) return;
+    const text = "私の名探偵コナンの主題歌Tier表です。あなたの表とくらべてみてください！ #名探偵コナン";
+    openIntent(text, url);
+    toast("Xの投稿画面を開きました");
   });
 
   /* ------------------------------------------------------ export / import */
@@ -1322,4 +1449,6 @@
 
   titleEl.textContent = state.title;
   render();
+  openIncomingShare();
+  window.addEventListener("hashchange", openIncomingShare); // a link opened while the app is already open
 })();

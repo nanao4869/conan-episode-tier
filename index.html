@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.13.0">
+<link rel="stylesheet" href="style.css?v=1.14.0">
 </head>
 <body data-mode="title">
 
@@ -155,7 +155,7 @@
 
 <footer class="site-footer">
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。 <button type="button" class="link-btn" id="aboutBtn">このサイトについて</button></p>
-  <p class="version">Ver 1.13.0</p>
+  <p class="version">Ver 1.14.0</p>
 </footer>
 
 <!-- このサイトについて -->
@@ -190,6 +190,10 @@
     <button type="button" class="btn btn-ghost dlg-seen-btn" id="dSeenBtn" title="見た上でTierに入れなかった話だと分かるようにする印です">確認済みにする</button>
     <p class="dlg-label">Tierに入れる</p>
     <div class="chips" id="dChips"></div>
+    <div class="dlg-grid">
+      <button type="button" class="btn btn-ghost" id="dPrevBtn">← 前の話</button>
+      <button type="button" class="btn btn-ghost" id="dNextBtn">次の話 →</button>
+    </div>
     <div id="dMemoBox">
       <label class="dlg-label" for="dMemo" title="表のリンクには含まれず、エクスポートのJSONには保存されます">メモ（自分だけが見られます）</label>
       <textarea id="dMemo" rows="3" maxlength="300" placeholder="感想やメモを書けます"></textarea>
@@ -462,7 +466,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.13.0"></script>
-<script src="script.js?v=1.13.0"></script>
+<script src="data/episodes.js?v=1.14.0"></script>
+<script src="script.js?v=1.14.0"></script>
 </body>
 </html>

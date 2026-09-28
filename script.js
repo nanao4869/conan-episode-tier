@@ -3,6 +3,10 @@
 
   const EPISODES = window.EPISODES || [];
   const BY_NO = new Map(EPISODES.map((e) => [e.no, e]));
+  // EPISODES is already in the correct browsing order (anime-original episodes are interleaved
+  // at their real broadcast position), but `no` itself isn't contiguous, so 前/次 navigation has
+  // to walk this index map rather than doing no±1 arithmetic.
+  const IDX_BY_NO = new Map(EPISODES.map((e, i) => [e.no, i]));
   const isAnime = (ep) => ep.k === "a";
   // A manga case that has an anime version (its アニメ list has a link).
   const hasTv = (ep) => !isAnime(ep) && !!ep.an && ep.an.some((a) => a.u);
@@ -1001,9 +1005,11 @@
   }
 
   let detailNo = null;
-  function openDetail(no) {
+  function openDetail(no, opts) {
     const ep = BY_NO.get(no);
     if (!ep) return;
+    const keepScroll = opts && opts.keepScroll;
+    const prevScrollTop = keepScroll ? detailDlg.scrollTop : 0;
     detailNo = no;
     $("dImg").src = ep.img;
     $("dImg").alt = ep.title;
@@ -1059,7 +1065,7 @@
       b.addEventListener("click", () => {
         if (viewMode) return; // never move anything in a friend's board
         moveEpisode(no, t.id);
-        detailDlg.close();
+        openDetail(no, { keepScroll: true }); // stay open, just refresh the current-tier highlight
       });
       chips.append(b);
     });
@@ -1070,15 +1076,23 @@
     pb.addEventListener("click", () => {
       if (viewMode) return;
       moveEpisode(no, null);
-      detailDlg.close();
+      openDetail(no, { keepScroll: true });
     });
     chips.append(pb);
     $("dChips").hidden = viewMode;
     $("dChips").previousElementSibling.hidden = viewMode;
+    const idx = IDX_BY_NO.get(no);
+    const prevEp = idx > 0 ? EPISODES[idx - 1] : null;
+    const nextEp = idx < EPISODES.length - 1 ? EPISODES[idx + 1] : null;
+    $("dPrevBtn").disabled = !prevEp;
+    $("dPrevBtn").onclick = prevEp ? () => openDetail(prevEp.no) : null;
+    $("dNextBtn").disabled = !nextEp;
+    $("dNextBtn").onclick = nextEp ? () => openDetail(nextEp.no) : null;
     $("dMemo").value = (state.notes && state.notes[no]) || "";
     $("dMemoBox").hidden = viewMode; // notes belong to our own state; there is nothing to save while viewing a friend's board
     $("dSeenBtn").hidden = viewMode; // same idea: "確認済み" is about our own progress, not a friend's board
-    detailDlg.showModal();
+    if (!detailDlg.open) detailDlg.showModal();
+    if (keepScroll) detailDlg.scrollTop = prevScrollTop;
   }
 
   // Saved a moment after typing stops, like the share link (scheduleShareLink); doesn't create undo steps (unlike board edits).

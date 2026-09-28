@@ -291,7 +291,7 @@ body.op-page .item .op-age-badge {
 
 /* ---------- dialogs ---------- */
 dialog {
-  width: min(92vw, 440px); max-height: 90vh; padding: 0; overflow: auto;
+  width: min(92vw, 440px); max-height: 90vh; padding: 0; overflow: auto; overscroll-behavior: contain;
   background: #202027; color: var(--text); border: 1px solid #4a4a56; border-radius: 14px;
 }
 dialog::backdrop { background: rgba(0, 0, 0, .7); }

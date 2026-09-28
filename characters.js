@@ -276,7 +276,7 @@
   window.addEventListener("pointermove", (e) => {
     if (!poolDrag || e.pointerId !== poolDrag.id) return;
     const delta = poolDrag.startY - e.clientY; // dragging up = growing
-    const max = window.innerHeight - 140;
+    const max = window.innerHeight - 64;
     poolEl.style.height = `${Math.max(POOL_MIN_H, Math.min(max, poolDrag.startH + delta))}px`;
     syncPoolMin();
   });

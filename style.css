@@ -284,7 +284,9 @@ body.op-page .item .op-age-badge {
 .pool-filters input, .pool-filters select, .dlg-body select {
   min-width: 0; padding: 7px 9px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line2); background: #121216; color: var(--text);
 }
-.pool-filters input { flex: 1 1 auto; }
+/* :not(.age-input) - otherwise this beats .age-input's own flex:0 0 104px on specificity alone
+   (class+type > class), squeezing the age box down to almost nothing wherever it sits in a .pool-filters row. */
+.pool-filters input:not(.age-input) { flex: 1 1 auto; }
 .dlg-body select { width: 100%; margin-top: 4px; }
 .pool-filters select { flex: 0 0 auto; max-width: 46%; }
 /* 3つ並ぶ行（主題歌Tier表のアーティスト／年代／TV・映画）は、46%上限だと2つしか収まらず1つだけ浮くので、

@@ -671,6 +671,15 @@ body.op-page.viewing #poolGrid { display: none; }
    with those hidden, only the compact video section is left, so let the sheet shrink to fit it instead of
    leaving empty space below the video. */
 body.op-page.viewing .pool { height: auto; }
+/* PC幅では、単に .board の下に大きく動画が並ぶだけだと格好悪いので、YouTubeのミニプレーヤーのように
+   右下に小さく浮かせる（.pool は元々 sticky サイドバー用のスタイルなので、fixed に上書きする）。*/
+@media (min-width: 900px) {
+  body.op-page.viewing .pool {
+    position: fixed; top: auto; left: auto; bottom: 20px; right: 20px;
+    width: 280px; max-height: none; z-index: 50; border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .5);
+  }
+}
 
 /* ---------- other tools (footer cards) ---------- */
 .other-tools { max-width: 720px; margin: 36px auto 0; padding: 0 16px; }

@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.12.4">
+<link rel="stylesheet" href="style.css?v=1.13.0">
 </head>
 <body data-mode="title">
 
@@ -101,28 +101,15 @@
           <h2>エピソード</h2>
           <span id="poolCount" class="pool-count"></span>
           <button type="button" class="found-btn" id="foundBtn" title="今の絞り込みに合う、表に配置済みのエピソードへ移動します" hidden></button>
-          <button type="button" class="btn btn-ghost btn-sm filter-toggle" id="filterToggle" aria-expanded="false">絞り込み ▾</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="filterBtn">絞り込み</button>
           <button type="button" class="btn btn-ghost btn-sm pool-collapse-btn" id="poolCollapseBtn" title="一覧を一時的に隠して、表を広く使えます">隠す</button>
         </div>
         <div class="pool-filters">
           <input type="search" id="q" placeholder="タイトル・話数で検索" autocomplete="off" aria-label="検索">
-          <select id="kind" aria-label="種類で絞り込み">
-            <option value="">マンガ＋アニメ</option>
-            <option value="manga">マンガの事件のみ</option>
-            <option value="manga-tv">マンガ・アニメ化あり</option>
-            <option value="manga-notv">マンガ・アニメ化なし</option>
-            <option value="anime">アニメオリジナルのみ</option>
-          </select>
-        </div>
-        <div class="pool-filters pool-filters-2">
-          <select id="vol" aria-label="マンガの巻で絞り込み"><option value="">すべての巻</option></select>
-          <select id="year" aria-label="アニメの放送年で絞り込み"><option value="">すべての放送年</option></select>
         </div>
         <div class="pool-char-row">
-          <button type="button" class="btn btn-ghost btn-sm" id="charBtn">キャラで絞り込み</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="memoFilterBtn" title="クリックで「メモがある話」→「メモがない話」→解除、と切り替わります（表に配置済みのものは、枠で囲んで示します）">メモで絞り込み</button>
-          <button type="button" class="btn btn-ghost btn-sm" id="memoListBtn" title="書いたメモを一覧でまとめて確認できます">メモ一覧</button>
           <div id="charChips" class="char-chips"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="memoListBtn" title="書いたメモを一覧でまとめて確認できます">メモ一覧</button>
           <button type="button" class="btn btn-ghost btn-sm" id="sortBtn" title="マンガとアニメはそれぞれ、番号順を逆にします">並び：古い順</button>
         </div>
       </div>
@@ -140,7 +127,7 @@
     <img src="og-image-opening.png" alt="" width="240" height="126" loading="lazy">
     <span class="tool-card-body">
       <strong>コナン 主題歌Tier表メーカー</strong>
-      <span>歴代OP・ED主題歌133曲を、動画を見ながらTier表に並べられます。</span>
+      <span>歴代OP・ED・劇場版主題歌163曲を、動画を見ながらTier表に並べられます。</span>
     </span>
   </a>
   <a class="tool-card" href="holmes.html">
@@ -168,7 +155,7 @@
 
 <footer class="site-footer">
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。 <button type="button" class="link-btn" id="aboutBtn">このサイトについて</button></p>
-  <p class="version">Ver 1.12.4</p>
+  <p class="version">Ver 1.13.0</p>
 </footer>
 
 <!-- このサイトについて -->
@@ -191,6 +178,7 @@
     <p class="detail-no" id="dNo"></p>
     <h3 class="detail-title" id="dTitle"></h3>
     <p class="detail-file"><span class="detail-season" id="dSeason" title="Wikipedia「名探偵コナンのアニメエピソード一覧」のシーズン区分です" hidden></span><span id="dFile"></span></p>
+    <p class="detail-file" id="dAgeNote" hidden></p>
     <div id="dAnimeBox">
       <p class="dlg-label">アニメ</p>
       <ul class="anime-list" id="dAnime"></ul>
@@ -199,6 +187,7 @@
       <p class="dlg-label" id="dCharsLabel">メインキャラ</p>
       <div class="char-list" id="dChars"></div>
     </div>
+    <button type="button" class="btn btn-ghost dlg-seen-btn" id="dSeenBtn" title="見た上でTierに入れなかった話だと分かるようにする印です">確認済みにする</button>
     <p class="dlg-label">Tierに入れる</p>
     <div class="chips" id="dChips"></div>
     <div id="dMemoBox">
@@ -257,6 +246,47 @@
 </dialog>
 
 <!-- キャラ絞り込み -->
+<!-- 絞り込み -->
+<dialog id="filterDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">絞り込み</h3>
+    <label class="dlg-label" for="kind">種類</label>
+    <select id="kind" aria-label="種類で絞り込み">
+      <option value="">マンガ＋アニメ</option>
+      <option value="manga">マンガの事件のみ</option>
+      <option value="manga-tv">マンガ・アニメ化あり</option>
+      <option value="manga-notv">マンガ・アニメ化なし</option>
+      <option value="anime">アニメオリジナルのみ</option>
+    </select>
+    <div class="dlg-grid">
+      <div>
+        <label class="dlg-label" for="vol">マンガの巻</label>
+        <select id="vol" aria-label="マンガの巻で絞り込み"><option value="">すべての巻</option></select>
+      </div>
+      <div>
+        <label class="dlg-label" for="year">アニメの放送年</label>
+        <select id="year" aria-label="アニメの放送年で絞り込み"><option value="">すべての放送年</option></select>
+      </div>
+    </div>
+    <p class="dlg-label">キャラ・メモ・確認状況</p>
+    <div class="dlg-grid dlg-grid-3">
+      <button type="button" class="btn btn-ghost btn-sm" id="charBtn">キャラで絞り込み</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="memoFilterBtn" title="クリックで「メモがある話」→「メモがない話」→解除、と切り替わります（表に配置済みのものは、枠で囲んで示します）">メモで絞り込み</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="seenFilterBtn" title="クリックで「未確認のみ」→「確認済みのみ」→解除、と切り替わります">確認済みで絞り込み</button>
+    </div>
+    <label class="dlg-label" for="ageInput">今の年齢</label>
+    <label class="age-group" title="今の年齢を入力すると、各話が発表・放送された年の年齢が分かります">
+      <input type="number" id="ageInput" class="age-input" min="0" max="110" inputmode="numeric" placeholder="今の年齢" aria-label="今の年齢（発表・放送当時の年齢が分かります）">
+      <span class="age-note" id="ageNote"></span>
+    </label>
+    <div class="dlg-grid">
+      <button type="button" class="btn btn-ghost" id="filterResetBtn">絞り込みをすべて解除</button>
+      <button type="button" class="btn btn-primary" data-close>閉じる</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="charDialog" class="dlg-wide">
   <div class="dlg-body">
     <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
@@ -432,7 +462,7 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.12.4"></script>
-<script src="script.js?v=1.12.4"></script>
+<script src="data/episodes.js?v=1.13.0"></script>
+<script src="script.js?v=1.13.0"></script>
 </body>
 </html>

@@ -3,7 +3,10 @@
 
   // start/end (seconds) mark each song's slice of the linked video; end = next song's start (last song has none).
   // Songs added after the video was made (no "start") aren't in it at all - they just don't get a play button.
-  const SONGS = (window.OPENINGS || []).map((s, i, arr) => ({
+  // Movie theme songs (window.MOVIE_THEMES) go after all the TV OP/ED, in movie release order; they never have
+  // a "start" either (they're not in the TV compilation video), so they only ever play their own official PV.
+  const ALL_SONGS = [...(window.OPENINGS || []), ...(window.MOVIE_THEMES || [])];
+  const SONGS = ALL_SONGS.map((s, i, arr) => ({
     ...s,
     end: arr[i + 1] && arr[i + 1].start != null ? arr[i + 1].start : Infinity,
   }));
@@ -11,6 +14,23 @@
   const VIDEO_ID = window.OP_VIDEO_ID;
 
   const STORAGE_KEY = "conanOpeningTier.v1";
+  // 「好きな曲だけTierに入れる」使い方だと、未分類のままの曲が「まだ見てない」のか「見た上でTierに入れなかった」のか
+  // 分からなくなるので、Tierとは別に「確認済み」を曲ごとに覚えておく（プールに残ったままのカードを見分けるためだけの印）。
+  const SEEN_KEY = "conanOpeningTier.seen";
+  let seenSet = new Set();
+  try {
+    seenSet = new Set(JSON.parse(localStorage.getItem(SEEN_KEY)) || []);
+  } catch (e) { /* default to empty */ }
+  function saveSeen() {
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seenSet])); } catch (e) { /* not remembered, still works */ }
+  }
+  function setSeen(no, on) {
+    if (on) seenSet.add(no);
+    else seenSet.delete(no);
+    saveSeen();
+    const el = itemCache.get(no);
+    if (el) el.classList.toggle("op-seen", on);
+  }
   const DEFAULT_TITLE = "好きな名探偵コナンの主題歌 Tier表";
   const DEFAULT_TIERS = [
     { name: "S\n最高", color: "#ff7f7f" },
@@ -186,6 +206,7 @@
     if (d) return d;
     d = document.createElement("div");
     d.className = "item";
+    if (seenSet.has(s.no)) d.classList.add("op-seen");
     d.dataset.no = s.no;
     d.tabIndex = 0;
     d.setAttribute("role", "button");
@@ -202,6 +223,20 @@
     title.className = "op-title";
     title.textContent = s.title;
     art.append(artist, title);
+    if (s.movieNo) {
+      // TVのOP/EDが映画の主題歌としても使われた曲は、映画オリジナルの曲と分かるように表示を変える。
+      const badge = document.createElement("span");
+      badge.className = "op-movie-badge";
+      badge.textContent = s.epRange ? "TV+映画" : "映画";
+      art.append(badge);
+    }
+    const age = ageThen(s.no);
+    if (age != null && age >= 0) {
+      const ageBadge = document.createElement("span");
+      ageBadge.className = "op-age-badge no-export";
+      ageBadge.textContent = `${age}歳`;
+      art.append(ageBadge);
+    }
 
     d.append(art);
     if (s.start != null || s.video) {
@@ -218,6 +253,19 @@
       });
       d.append(play);
     }
+    const seen = document.createElement("button");
+    seen.type = "button";
+    seen.className = "op-seen-btn no-export";
+    seen.setAttribute("aria-label", "確認済みにする（見た上でTierに入れなかった曲の印）");
+    seen.textContent = "✓";
+    // Keep this button out of the drag/tap-to-open system, same as the play button above.
+    seen.addEventListener("pointerdown", (e) => e.stopPropagation());
+    seen.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setSeen(s.no, !seenSet.has(s.no));
+      renderPool();
+    });
+    d.append(seen);
     itemCache.set(s.no, d);
     return d;
   }
@@ -362,6 +410,66 @@
     return m ? `${Math.floor(+m[1] / 10) * 10}年代` : "年代不明";
   };
   const ERA = new Map(SONGS.map((s) => [s.no, eraOf(s)]));
+
+  // 「放送・公開年」（曲の year）と「自分の生まれ年」から、その曲が出た時の自分の年齢を逆算する。
+  // 年齢は年をまたぐと変わってしまうので、覚えておくのは（入力時点から計算した）生まれ年そのもの。
+  const YEAR = new Map(
+    SONGS.map((s) => {
+      const m = s.period && /(\d{4})年/.exec(s.period);
+      return [s.no, m ? +m[1] : null];
+    })
+  );
+  const AGE_KEY = "conanOpeningTier.birthYear";
+  let birthYear = null;
+  try {
+    const saved = parseInt(localStorage.getItem(AGE_KEY), 10);
+    if (saved > 1900 && saved < 2030) birthYear = saved;
+  } catch (e) { /* default to unset */ }
+  const ageThen = (no) => {
+    const y = YEAR.get(no);
+    return birthYear != null && y != null ? y - birthYear : null;
+  };
+  function updateAgeBadges() {
+    for (const [no, el] of itemCache) {
+      const art = el.querySelector(".op-art");
+      let badge = art.querySelector(".op-age-badge");
+      const age = ageThen(no);
+      if (age != null && age >= 0) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "op-age-badge no-export";
+          art.append(badge);
+        }
+        badge.textContent = `${age}歳`;
+      } else if (badge) {
+        badge.remove();
+      }
+    }
+  }
+  const ageInputEl = $("ageInput");
+  const ageNoteEl = $("ageNote");
+  function syncAgeNote() {
+    ageNoteEl.textContent = birthYear != null ? `生まれ年：${birthYear}年ごろ` : "当時の年齢が分かります";
+  }
+  if (birthYear != null) ageInputEl.value = new Date().getFullYear() - birthYear;
+  syncAgeNote();
+  ageInputEl.addEventListener("input", () => {
+    const v = parseInt(ageInputEl.value, 10);
+    if (ageInputEl.value.trim() === "") {
+      birthYear = null;
+    } else if (v >= 0 && v <= 110) {
+      birthYear = new Date().getFullYear() - v;
+    } else {
+      return;
+    }
+    try {
+      if (birthYear != null) localStorage.setItem(AGE_KEY, birthYear);
+      else localStorage.removeItem(AGE_KEY);
+    } catch (e) { /* not remembered, still works */ }
+    syncAgeNote();
+    updateAgeBadges();
+  });
+
   const qEl = $("q");
   let filterTimer = 0;
   qEl.addEventListener("input", () => {
@@ -399,18 +507,46 @@
   })();
   eraFilterEl.addEventListener("change", renderPool);
 
+  // TV・映画で絞り込み: TVはepRangeがある曲、映画はmovieNoがある曲（両方兼ねる曲はどちらでもヒットする）。
+  const kindFilterEl = $("kindFilter");
+  (() => {
+    const tvCount = SONGS.filter((s) => s.epRange).length;
+    const movieCount = SONGS.filter((s) => s.movieNo).length;
+    kindFilterEl.querySelector('option[value="tv"]').textContent = `TVのみ（${tvCount}）`;
+    kindFilterEl.querySelector('option[value="movie"]').textContent = `映画のみ（${movieCount}）`;
+  })();
+  kindFilterEl.addEventListener("change", renderPool);
+
+  // 確認済みで絞り込み: 「見た上でTierに入れなかった曲」を、一覧から隠す／それだけ表示する。
+  const SEEN_FILTER_LABEL = { off: "確認済みで絞り込み", unseen: "絞り込み：未確認のみ", seen: "絞り込み：確認済みのみ" };
+  let seenFilter = "off";
+  const seenFilterBtn = $("seenFilterBtn");
+  seenFilterBtn.addEventListener("click", () => {
+    seenFilter = seenFilter === "off" ? "unseen" : seenFilter === "unseen" ? "seen" : "off";
+    seenFilterBtn.textContent = SEEN_FILTER_LABEL[seenFilter];
+    seenFilterBtn.classList.toggle("is-active", seenFilter !== "off");
+    renderPool();
+  });
+
   function renderPool() {
+    const scrollTop = poolGrid.scrollTop; // replaceChildren() below would otherwise reset the list's scroll to the top
     const placed = new Set();
     state.tiers.forEach((t) => t.items.forEach((n) => placed.add(n)));
     const artist = artistFilterEl.value;
     const era = eraFilterEl.value;
+    const kind = kindFilterEl.value;
     const q = norm(qEl.value.trim());
-    const filtering = artist || era || q;
+    const filtering = artist || era || kind || seenFilter !== "off" || q;
     const passes = (s) =>
-      (!artist || s.artist === artist) && (!era || ERA.get(s.no) === era) && (!q || HAYSTACK.get(s.no).includes(q));
+      (!artist || s.artist === artist) &&
+      (!era || ERA.get(s.no) === era) &&
+      (!kind || (kind === "tv" ? !!s.epRange : !!s.movieNo)) &&
+      (seenFilter === "off" || (seenFilter === "seen") === seenSet.has(s.no)) &&
+      (!q || HAYSTACK.get(s.no).includes(q));
     const frag = document.createDocumentFragment();
     let shown = 0;
     let remaining = 0;
+    let seenRemaining = 0;
     const foundSet = new Set();
     for (const s of newestFirst ? [...SONGS].reverse() : SONGS) {
       if (placed.has(s.no)) {
@@ -418,6 +554,7 @@
         continue;
       }
       remaining++;
+      if (seenSet.has(s.no)) seenRemaining++;
       if (filtering && !passes(s)) continue;
       shown++;
       frag.append(itemEl(s));
@@ -429,8 +566,10 @@
       frag.append(p);
     }
     poolGrid.replaceChildren(frag);
+    poolGrid.scrollTop = scrollTop;
     for (const [no, el] of itemCache) el.classList.toggle("found", foundSet.has(no));
-    poolCount.textContent = filtering ? `${shown}件表示 ／ 未分類 ${remaining}件` : `未分類 ${remaining} / ${SONGS.length}`;
+    const seenNote = seenRemaining ? `　確認済み ${seenRemaining}件` : "";
+    poolCount.textContent = (filtering ? `${shown}件表示 ／ 未分類 ${remaining}件` : `未分類 ${remaining} / ${SONGS.length}`) + seenNote;
     markPlaying(); // playing-highlight is on the actual tile elements, which just got reattached
   }
 
@@ -645,10 +784,33 @@
     $("dNo").textContent = `No.${s.no}`;
     $("dTitle").textContent = s.title;
     $("dFile").textContent = s.artist;
-    $("dPeriod").textContent = s.period ? `放送：${s.epRange}（${s.period}）` : "";
+    $("dPeriod").textContent = s.movieNo && !s.epRange
+      ? `劇場版『${s.movieTitle}』主題歌（${s.period}公開）`
+      : s.period
+      ? `放送：${s.epRange}（${s.period}）`
+      : "";
     $("dPeriod").hidden = !s.period;
+    $("dMovieNote").textContent = s.movieNo && s.epRange ? `劇場版『${s.movieTitle}』（${s.moviePeriod}公開）の主題歌としても使われました` : "";
+    $("dMovieNote").hidden = !(s.movieNo && s.epRange);
+    const ageAtSong = ageThen(no);
+    $("dAgeNote").textContent = ageAtSong != null && ageAtSong >= 0 ? `この曲が出たのは、あなたが${ageAtSong}歳の頃です` : "";
+    $("dAgeNote").hidden = ageAtSong == null || ageAtSong < 0;
     $("dPlayBtn").hidden = s.start == null && !s.video;
-    $("dPlayBtn").onclick = () => playSong(no);
+    $("dPlayBtn").onclick = () => {
+      playSong(no);
+      detailDlg.close(); // ダイアログを開いたままだと、下にある一時停止・早送り・音量などの操作ができない
+    };
+    const seenBtn = $("dSeenBtn");
+    const syncSeenBtn = () => {
+      seenBtn.textContent = seenSet.has(no) ? "確認済みを解除" : "確認済みにする";
+      seenBtn.classList.toggle("is-current", seenSet.has(no));
+    };
+    syncSeenBtn();
+    seenBtn.onclick = () => {
+      setSeen(no, !seenSet.has(no));
+      syncSeenBtn();
+      renderPool();
+    };
 
     const cur = tierOf(no);
     const chips = $("dChips");
@@ -1025,12 +1187,26 @@
   let ytMode = "reel";
   let playingNo = null;
 
+  // 動画自体が小さくて、YouTube本体の早送り・音量操作がしづらいので、そこだけ補う軽量なボタン/スライダー。
+  // 再生・一時停止やシークバーはYouTube本体に任せたまま（動画を隠す/表示の切り替え時にも同じ音量を保つ）。
+  const VOLUME_KEY = "conanOpeningTier.volume";
+  let volumePref = 100;
+  try {
+    const saved = parseInt(localStorage.getItem(VOLUME_KEY), 10);
+    if (saved >= 0 && saved <= 100) volumePref = saved;
+  } catch (e) { /* default to 100 */ }
+  $("ytVolume").value = volumePref;
+
   window.onYouTubeIframeAPIReady = () => {
     ytPlayer = new YT.Player("ytPlayer", {
       videoId: VIDEO_ID,
       playerVars: { rel: 0 },
       events: {
-        onReady: () => { ytReady = true; },
+        onReady: () => {
+          ytReady = true;
+          ytPlayer.setVolume(volumePref);
+        },
+        onStateChange: (e) => setPlayPauseIcon(e.data === 1),
       },
     });
   };
@@ -1043,10 +1219,14 @@
     if (!s || !ytReady) return;
     if (s.start != null) {
       if (ytMode !== "reel") {
+        // loadVideoById() is asynchronous (it has to buffer the new video first), so a seekTo() called
+        // right after it races the load and gets ignored - passing the start time as loadVideoById's own
+        // 2nd argument avoids that race entirely.
         ytMode = "reel";
-        ytPlayer.loadVideoById(VIDEO_ID);
+        ytPlayer.loadVideoById(VIDEO_ID, s.start);
+      } else {
+        ytPlayer.seekTo(s.start, true);
       }
-      ytPlayer.seekTo(s.start, true);
       ytPlayer.playVideo();
     } else if (s.video) {
       ytMode = "single";
@@ -1071,6 +1251,32 @@
   let hideVideoPref = false;
   try { hideVideoPref = localStorage.getItem(YT_HIDE_KEY) === "1"; } catch (e) { /* default to shown */ }
   setVideoHidden(hideVideoPref);
+
+  const ytPlayPauseBtn = $("ytPlayPause");
+  function setPlayPauseIcon(playing) {
+    ytPlayPauseBtn.querySelector(".yt-icon-pause").hidden = !playing;
+    ytPlayPauseBtn.querySelector(".yt-icon-play").hidden = playing;
+    ytPlayPauseBtn.title = ytPlayPauseBtn.ariaLabel = playing ? "一時停止" : "再生";
+  }
+  ytPlayPauseBtn.addEventListener("click", () => {
+    if (!ytReady) return;
+    if (ytPlayer.getPlayerState() === 1) ytPlayer.pauseVideo();
+    else ytPlayer.playVideo();
+  });
+
+  $("ytBack10").addEventListener("click", () => {
+    if (!ytReady) return;
+    ytPlayer.seekTo(Math.max(0, ytPlayer.getCurrentTime() - 10), true);
+  });
+  $("ytFwd10").addEventListener("click", () => {
+    if (!ytReady) return;
+    ytPlayer.seekTo(ytPlayer.getCurrentTime() + 10, true);
+  });
+  $("ytVolume").addEventListener("input", (e) => {
+    volumePref = +e.target.value;
+    if (ytReady) ytPlayer.setVolume(volumePref);
+    try { localStorage.setItem(VOLUME_KEY, volumePref); } catch (err) { /* not remembered, still works */ }
+  });
 
   function markPlaying() {
     for (const [no, el] of itemCache) el.classList.toggle("op-playing", no === playingNo);

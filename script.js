@@ -224,6 +224,54 @@
 
   const itemCache = new Map();
 
+  // 「好きな話だけTierに入れる」使い方だと、未分類のままの話が「まだ見てない」のか「見た上でTierに
+  // 入れなかった」のか分からなくなるので、Tierとは別に「確認済み」を話ごとに覚えておく。
+  const SEEN_KEY = "conanEpisodeTier.seen";
+  let seenSet = new Set();
+  try {
+    seenSet = new Set(JSON.parse(localStorage.getItem(SEEN_KEY)) || []);
+  } catch (e) { /* default to empty */ }
+  function saveSeen() {
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seenSet])); } catch (e) { /* not remembered, still works */ }
+  }
+  function setSeen(no, on) {
+    if (on) seenSet.add(no);
+    else seenSet.delete(no);
+    saveSeen();
+    const el = itemCache.get(no);
+    if (el) el.classList.toggle("is-seen", on);
+  }
+
+  // 「今の年齢」から、その話が発表・放送された年の年齢を逆算する。年齢は年をまたぐと変わるので、
+  // 覚えておくのは（入力時点から計算した）生まれ年そのもの。年は既存のyearOf()（下で定義）と同じ基準。
+  const AGE_KEY = "conanEpisodeTier.birthYear";
+  let birthYear = null;
+  try {
+    const saved = parseInt(localStorage.getItem(AGE_KEY), 10);
+    if (saved > 1900 && saved < 2030) birthYear = saved;
+  } catch (e) { /* default to unset */ }
+  const ageThen = (no) => {
+    const ep = BY_NO.get(no);
+    const y = ep && yearOf(ep);
+    return birthYear != null && y ? y - birthYear : null;
+  };
+  function updateAgeBadges() {
+    for (const [no, el] of itemCache) {
+      let badge = el.querySelector(".age-badge");
+      const age = ageThen(no);
+      if (age != null && age >= 0) {
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "age-badge no-export";
+          el.append(badge);
+        }
+        badge.textContent = `${age}歳`;
+      } else if (badge) {
+        badge.remove();
+      }
+    }
+  }
+
   // One element per episode, reused between board and pool so already-loaded images don't flash.
   function itemEl(ep) {
     let d = itemCache.get(ep.no);
@@ -244,6 +292,26 @@
     cap.className = "cap";
     cap.textContent = ep.title;
     d.append(img, badge, cap);
+    if (seenSet.has(ep.no)) d.classList.add("is-seen");
+    const seen = document.createElement("button");
+    seen.type = "button";
+    seen.className = "seen-btn no-export";
+    seen.setAttribute("aria-label", "確認済みにする（見た上でTierに入れなかった話の印）");
+    seen.textContent = "✓";
+    seen.addEventListener("pointerdown", (e) => e.stopPropagation());
+    seen.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setSeen(ep.no, !seenSet.has(ep.no));
+      renderPool();
+    });
+    d.append(seen);
+    const age = ageThen(ep.no);
+    if (age != null && age >= 0) {
+      const ageBadge = document.createElement("span");
+      ageBadge.className = "age-badge no-export";
+      ageBadge.textContent = `${age}歳`;
+      d.append(ageBadge);
+    }
     itemCache.set(ep.no, d);
     refreshItemEl(ep, d);
     return d;
@@ -353,18 +421,27 @@
 
   const HAYSTACK = new Map(EPISODES.map((e) => [e.no, norm(`${labelOf(e)} ${e.title} ${e.file}`)]));
 
-  // On narrow screens the extra filters fold away so the episode list keeps its height.
-  // The button shows how many hidden filters are on, so a folded panel never hides an active filter.
-  const filterToggle = $("filterToggle");
+  // 絞り込みの種類が増えてきたので、種類・巻・放送年・キャラ・メモ・確認済み・年齢は1つのダイアログにまとめている。
+  // ボタンには、今いくつ効いているかだけ出す（ダイアログを開かなくても分かるように）。
+  const filterBtn = $("filterBtn");
+  const filterDlg = $("filterDialog");
   function updateFilterToggle(activeCount) {
-    const open = poolEl.classList.contains("filters-open");
-    filterToggle.textContent = `絞り込み${activeCount ? `（${activeCount}）` : ""} ${open ? "▴" : "▾"}`;
-    filterToggle.classList.toggle("is-active", activeCount > 0);
-    filterToggle.setAttribute("aria-expanded", String(open));
+    filterBtn.textContent = `絞り込み${activeCount ? `（${activeCount}）` : ""}`;
+    filterBtn.classList.toggle("is-active", activeCount > 0);
   }
-  filterToggle.addEventListener("click", () => {
-    poolEl.classList.toggle("filters-open");
-    renderPool();
+  filterBtn.addEventListener("click", () => filterDlg.showModal());
+  $("filterResetBtn").addEventListener("click", () => {
+    kindEl.value = "";
+    volEl.value = "";
+    yearEl.value = "";
+    selectedChars.clear();
+    memoFilter = "off";
+    memoFilterBtn.textContent = MEMO_FILTER_LABEL.off;
+    memoFilterBtn.classList.remove("is-active");
+    seenFilter = "off";
+    seenFilterBtn.textContent = SEEN_FILTER_LABEL.off;
+    seenFilterBtn.classList.remove("is-active");
+    refreshCharUI(); // also clears the char chips and calls renderPool()
   });
 
   // モバイルでは一覧がずっと画面の4割強を占めるので、タイトルバーを上下にドラッグして高さを変えられるように
@@ -464,6 +541,42 @@
     renderPool();
   });
 
+  // 確認済みで絞り込み: 「見た上でTierに入れなかった話」を、一覧から隠す／それだけ表示する。
+  const SEEN_FILTER_LABEL = { off: "確認済みで絞り込み", unseen: "絞り込み：未確認のみ", seen: "絞り込み：確認済みのみ" };
+  let seenFilter = "off";
+  const seenFilterBtn = $("seenFilterBtn");
+  seenFilterBtn.addEventListener("click", () => {
+    seenFilter = seenFilter === "off" ? "unseen" : seenFilter === "unseen" ? "seen" : "off";
+    seenFilterBtn.textContent = SEEN_FILTER_LABEL[seenFilter];
+    seenFilterBtn.classList.toggle("is-active", seenFilter !== "off");
+    renderPool();
+  });
+
+  // 今の年齢を入力すると、放送・発表当時の年齢が分かる。
+  const ageInputEl = $("ageInput");
+  const ageNoteEl = $("ageNote");
+  function syncAgeNote() {
+    ageNoteEl.textContent = birthYear != null ? `生まれ年：${birthYear}年ごろ` : "当時の年齢が分かります";
+  }
+  if (birthYear != null) ageInputEl.value = new Date().getFullYear() - birthYear;
+  syncAgeNote();
+  ageInputEl.addEventListener("input", () => {
+    const v = parseInt(ageInputEl.value, 10);
+    if (ageInputEl.value.trim() === "") {
+      birthYear = null;
+    } else if (v >= 0 && v <= 110) {
+      birthYear = new Date().getFullYear() - v;
+    } else {
+      return;
+    }
+    try {
+      if (birthYear != null) localStorage.setItem(AGE_KEY, birthYear);
+      else localStorage.removeItem(AGE_KEY);
+    } catch (e) { /* not remembered, still works */ }
+    syncAgeNote();
+    updateAgeBadges();
+  });
+
   // メモ一覧: every memo in one place (board order top to bottom, then 未分類), so the user can read them
   // the way they read their spreadsheet instead of opening each episode's detail one at a time.
   const memoListDlg = $("memoListDialog");
@@ -550,6 +663,7 @@
   });
 
   function renderPool() {
+    const scrollTop = poolGrid.scrollTop; // replaceChildren() below would otherwise reset the list's scroll to the top
     const placed = new Set();
     state.tiers.forEach((t) => t.items.forEach((n) => placed.add(n)));
     const q = norm(qEl.value.trim());
@@ -557,7 +671,7 @@
     const kind = kindEl.value;
     const year = yearEl.value;
     const chars = [...selectedChars];
-    const filtering = q || vol || kind || year || chars.length || memoFilter !== "off";
+    const filtering = q || vol || kind || year || chars.length || memoFilter !== "off" || seenFilter !== "off";
     const passes = (ep) => {
       if (kind) {
         if (kind === "anime" ? !isAnime(ep) : isAnime(ep)) return false; // the other kinds are all manga
@@ -570,11 +684,13 @@
       if (chars.length && !matchChars(ep, chars)) return false;
       if (memoFilter === "has" && !hasNote(ep.no)) return false;
       if (memoFilter === "none" && hasNote(ep.no)) return false;
+      if (seenFilter !== "off" && (seenFilter === "seen") !== seenSet.has(ep.no)) return false;
       return true;
     };
     const frag = document.createDocumentFragment();
     let remaining = 0;
     let shown = 0;
+    let seenRemaining = 0;
     const foundSet = new Set();
     for (const ep of newestFirst ? [...EPISODES].reverse() : EPISODES) {
       if (placed.has(ep.no)) {
@@ -582,6 +698,7 @@
         continue;
       }
       remaining++;
+      if (seenSet.has(ep.no)) seenRemaining++;
       if (!passes(ep)) continue;
       shown++;
       frag.append(itemEl(ep));
@@ -593,13 +710,17 @@
       frag.append(p);
     }
     poolGrid.replaceChildren(frag);
+    poolGrid.scrollTop = scrollTop;
     for (const [no, el] of itemCache) el.classList.toggle("found", foundSet.has(no));
     foundNos = state.tiers.flatMap((t) => t.items).filter((no) => foundSet.has(no)); // board order, top to bottom
     foundIdx = -1;
     foundBtn.hidden = foundNos.length === 0;
     foundBtn.textContent = `表内 ${foundNos.length}件 ▸`;
-    updateFilterToggle([kind, vol, year].filter(Boolean).length + (chars.length ? 1 : 0));
-    poolCount.textContent = filtering ? `${shown}件表示 ／ 未分類 ${remaining}件` : `未分類 ${remaining} / ${EPISODES.length}`;
+    updateFilterToggle(
+      [kind, vol, year].filter(Boolean).length + (chars.length ? 1 : 0) + (memoFilter !== "off" ? 1 : 0) + (seenFilter !== "off" ? 1 : 0)
+    );
+    const seenNote = seenRemaining ? `　確認済み ${seenRemaining}件` : "";
+    poolCount.textContent = (filtering ? `${shown}件表示 ／ 未分類 ${remaining}件` : `未分類 ${remaining} / ${EPISODES.length}`) + seenNote;
   }
 
   function render() {
@@ -893,6 +1014,20 @@
     const season = isAnime(ep) ? seasonText(ep) : "";
     $("dSeason").textContent = season;
     $("dSeason").hidden = !season;
+    const ageAtEp = ageThen(no);
+    $("dAgeNote").textContent = ageAtEp != null && ageAtEp >= 0 ? `発表・放送されたのは、あなたが${ageAtEp}歳の頃です` : "";
+    $("dAgeNote").hidden = ageAtEp == null || ageAtEp < 0;
+    const seenBtn = $("dSeenBtn");
+    const syncSeenBtn = () => {
+      seenBtn.textContent = seenSet.has(no) ? "確認済みを解除" : "確認済みにする";
+      seenBtn.classList.toggle("is-current", seenSet.has(no));
+    };
+    syncSeenBtn();
+    seenBtn.onclick = () => {
+      setSeen(no, !seenSet.has(no));
+      syncSeenBtn();
+      renderPool();
+    };
     $("dLink").href = isAnime(ep) ? ep.url : `https://websunday.net/episode/${ep.id}`;
     $("dLink").textContent = isAnime(ep) ? "読売テレビの公式サイトでこの話を見る ↗" : "公式サイトでこの事件を見る ↗";
     $("dCharsBox").hidden = ep.c.length === 0;
@@ -942,6 +1077,7 @@
     $("dChips").previousElementSibling.hidden = viewMode;
     $("dMemo").value = (state.notes && state.notes[no]) || "";
     $("dMemoBox").hidden = viewMode; // notes belong to our own state; there is nothing to save while viewing a friend's board
+    $("dSeenBtn").hidden = viewMode; // same idea: "確認済み" is about our own progress, not a friend's board
     detailDlg.showModal();
   }
 

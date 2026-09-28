@@ -4,25 +4,25 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>コナン 主題歌Tier表メーカー</title>
-<meta name="description" content="名探偵コナンの歴代OP・ED主題歌をTier表にして画像で保存できるツールです。動画を見ながら操作できます。">
+<meta name="description" content="名探偵コナンの歴代OP・ED・劇場版主題歌をTier表にして画像で保存できるツールです。動画を見ながら操作できます。">
 <meta name="theme-color" content="#0d1a3a">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="コナン 主題歌Tier表メーカー">
 <meta property="og:title" content="名探偵コナン 主題歌Tier表メーカー">
-<meta property="og:description" content="名探偵コナンの歴代OP・ED主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
+<meta property="og:description" content="名探偵コナンの歴代OP・ED・劇場版主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
 <meta property="og:url" content="https://nanao4869.github.io/conan-episode-tier/opening.html">
 <meta property="og:image" content="https://nanao4869.github.io/conan-episode-tier/og-image-opening.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="名探偵コナン 主題歌Tier表メーカー">
-<meta name="twitter:description" content="名探偵コナンの歴代OP・ED主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
+<meta name="twitter:description" content="名探偵コナンの歴代OP・ED・劇場版主題歌を、動画を見ながらドラッグでTier表に並べて、画像で保存できます。">
 <meta name="twitter:image" content="https://nanao4869.github.io/conan-episode-tier/og-image-opening.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1a3a'/%3E%3Crect x='10' y='12' width='14' height='10' fill='%23ff7f7f'/%3E%3Crect x='10' y='27' width='14' height='10' fill='%23ffdf7f'/%3E%3Crect x='10' y='42' width='14' height='10' fill='%237fff7f'/%3E%3Crect x='28' y='12' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='27' width='26' height='10' fill='%23555'/%3E%3Crect x='28' y='42' width='26' height='10' fill='%23555'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.4.6">
+<link rel="stylesheet" href="style.css?v=1.5.0">
 </head>
 <body class="op-page">
 
@@ -84,14 +84,46 @@
         </div>
         <div class="pool-filters">
           <input type="search" id="q" placeholder="曲名・アーティストで検索" autocomplete="off" aria-label="検索">
+        </div>
+        <div class="pool-filters pool-filters-3">
           <select id="artistFilter" aria-label="アーティストで絞り込み"><option value="">すべてのアーティスト</option></select>
           <select id="eraFilter" aria-label="放送年代で絞り込み"><option value="">すべての年代</option></select>
+          <select id="kindFilter" aria-label="TV・映画で絞り込み">
+            <option value="">TV＋映画</option>
+            <option value="tv">TVのみ</option>
+            <option value="movie">映画のみ</option>
+          </select>
+        </div>
+        <div class="pool-filters">
+          <button type="button" class="btn btn-ghost btn-sm" id="seenFilterBtn" title="クリックで「未確認のみ」→「確認済みのみ」→解除、と切り替わります">確認済みで絞り込み</button>
+          <label class="age-group" title="今の年齢を入力すると、各曲が放送・公開された年の年齢が分かります">
+            <input type="number" id="ageInput" class="age-input" min="0" max="110" inputmode="numeric" placeholder="今の年齢" aria-label="今の年齢（放送・公開当時の年齢が分かります）">
+            <span class="age-note" id="ageNote"></span>
+          </label>
         </div>
       </div>
       <div class="yt-wrap" id="ytWrap"><div id="ytPlayer"></div></div>
       <div class="yt-caption-row">
         <p class="yt-caption" id="ytCaption">再生中の曲はありません</p>
         <button type="button" class="btn btn-ghost btn-sm" id="ytHideBtn" title="映像を隠しても、音声はそのまま再生されます">動画を隠す</button>
+      </div>
+      <div class="yt-controls-row">
+        <button type="button" class="yt-ctrl-btn" id="ytBack10" title="10秒戻る" aria-label="10秒戻る">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17l-5-5 5-5"/><path d="M19 17l-5-5 5-5"/></svg>
+          <span>10</span>
+        </button>
+        <button type="button" class="yt-ctrl-btn yt-ctrl-btn-play" id="ytPlayPause" title="一時停止" aria-label="一時停止">
+          <svg class="yt-icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14"/><path d="M16 5v14"/></svg>
+          <svg class="yt-icon-play" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M7 5l12 7-12 7V5z"/></svg>
+        </button>
+        <button type="button" class="yt-ctrl-btn" id="ytFwd10" title="10秒進む" aria-label="10秒進む">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17l5-5-5-5"/><path d="M5 17l5-5-5-5"/></svg>
+          <span>10</span>
+        </button>
+        <label class="yt-vol-label" title="音量">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>
+          <input type="range" id="ytVolume" class="yt-vol" min="0" max="100" value="100" aria-label="音量">
+        </label>
       </div>
       <div id="poolGrid" class="pool-grid"></div>
     </aside>
@@ -135,8 +167,9 @@
 
 <footer class="site-footer">
   <p>動画の埋め込みはYouTubeの公式プレーヤーを利用しており、音源・映像はYouTube上のものをそのまま再生しています。</p>
+  <p>劇場版の主題歌・上映日の情報は、各アーティスト・レーベルの公式チャンネル、および劇場版主題歌の紹介記事を参考にしています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.4.6</p>
+  <p class="version">Ver 1.5.0</p>
 </footer>
 
 <!-- 主題歌詳細 -->
@@ -147,7 +180,10 @@
     <h3 class="detail-title" id="dTitle"></h3>
     <p class="detail-file" id="dFile"></p>
     <p class="detail-file" id="dPeriod" hidden></p>
+    <p class="detail-file" id="dMovieNote" hidden></p>
+    <p class="detail-file" id="dAgeNote" hidden></p>
     <button type="button" class="btn btn-primary" id="dPlayBtn">▶ この曲を再生</button>
+    <button type="button" class="btn btn-ghost dlg-seen-btn" id="dSeenBtn" title="見た上でTierに入れなかった曲だと分かるようにする印です">確認済みにする</button>
     <p class="dlg-label">Tierに入れる</p>
     <div class="chips" id="dChips"></div>
   </div>
@@ -177,7 +213,8 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/openings.js?v=1.4.6"></script>
-<script src="opening.js?v=1.4.6"></script>
+<script src="data/openings.js?v=1.5.0"></script>
+<script src="data/movie-themes.js?v=1.5.0"></script>
+<script src="opening.js?v=1.5.0"></script>
 </body>
 </html>

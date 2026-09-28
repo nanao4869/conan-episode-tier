@@ -152,6 +152,21 @@ body[data-mode="title"] .item .cap {
 
 .item.drag-source { display: none; }
 
+/* 「確認済み」印（Tierに入れなかった話を「見た」と記録するだけの軽い印）と、「今の年齢」を入力したときだけ
+   出る「当時の年齢」バッジ。既存の.badge（放送話数、下ではなく左寄り）とかぶらない角に置く。 */
+.item .seen-btn {
+  position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .5);
+  background: rgba(0, 0, 0, .45); color: rgba(255, 255, 255, .7); font-size: 9px; font-weight: 800; line-height: 1;
+  cursor: pointer; display: grid; place-items: center; padding: 0; z-index: 1;
+}
+.item .seen-btn:hover { background: rgba(0, 0, 0, .75); }
+.item.is-seen .seen-btn { background: #3fae5a; border-color: #3fae5a; color: #fff; }
+.item.is-seen img { opacity: .45; }
+.item .age-badge {
+  position: absolute; bottom: 3px; right: 3px; padding: 0 4px; border-radius: 4px;
+  background: #d8531f; color: #fff; font-size: 9px; font-weight: 800; line-height: 15px;
+}
+
 /* ---------- movie tier page (3:2 poster tiles, always shown with a title - see movie.js) ---------- */
 body.mv-page { --tile: 168px; }
 body.mv-page[data-mode="title"] { --item-h: calc(var(--tile) * .667 + 30px); }
@@ -185,6 +200,32 @@ body.op-page .item .op-play {
 }
 body.op-page .item .op-play:hover { background: rgba(0, 0, 0, .7); }
 body.op-page .item.op-playing { outline: 3px solid #ffd54a; outline-offset: -1px; }
+/* 「確認済み」印: Tierに入れなかった曲を「見た」と記録するだけの、Tierとは無関係な軽い印。
+   ボタンは常に出しておき、押した曲だけカード全体を少し暗くして一覧の中で目立たなくする（未確認の曲が自然と目に入るように）。 */
+body.op-page .item .op-seen-btn {
+  position: absolute; bottom: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .5);
+  background: rgba(0, 0, 0, .35); color: rgba(255, 255, 255, .7); font-size: 11px; font-weight: 800; line-height: 1;
+  cursor: pointer; display: grid; place-items: center; padding: 0;
+}
+body.op-page .item .op-seen-btn:hover { background: rgba(0, 0, 0, .6); }
+body.op-page .item.op-seen .op-seen-btn { background: #3fae5a; border-color: #3fae5a; color: #fff; }
+body.op-page .item.op-seen .op-art { opacity: .45; }
+.dlg-seen-btn.is-current { background: #3fae5a; border-color: #3fae5a; color: #fff; }
+/* 映画主題歌は、TVのOP/EDと混ざって一覧に並ぶので、小さな印だけ付けて見分けられるようにする。 */
+body.op-page .item .op-movie-badge {
+  position: absolute; top: 4px; left: 4px; padding: 1px 5px; border-radius: 4px;
+  background: rgba(0, 0, 0, .45); color: #fff; font-size: 9px; font-weight: 700; letter-spacing: .02em;
+}
+/* 自分の年齢を入力したときだけ出る、「この曲が出たのは何歳の頃か」の印。 */
+body.op-page .item .op-age-badge {
+  position: absolute; bottom: 4px; left: 4px; padding: 1px 5px; border-radius: 4px;
+  background: #d8531f; color: #fff; font-size: 9px; font-weight: 800;
+}
+.age-input {
+  flex: 0 0 104px; min-width: 0; padding: 7px 9px; font-size: 14px; border-radius: 6px;
+  border: 1px solid var(--line2); background: #121216; color: var(--text);
+}
+.age-note { font-size: 11px; color: var(--muted); white-space: nowrap; }
 @media (max-width: 520px) {
   body.op-page .pool-grid { --tile: calc((100vw - 16px) / 4 - 1px); }
 }
@@ -194,9 +235,25 @@ body.op-page .item.op-playing { outline: 3px solid #ffd54a; outline-offset: -1px
 .yt-wrap iframe, .yt-wrap > div { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 /* height (not display:none) so the iframe stays "visible" to the browser and keeps playing audio while collapsed */
 .yt-wrap.is-hidden { height: 0; aspect-ratio: unset; }
-.yt-caption-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 12px 0; flex-wrap: wrap; flex: 0 0 auto; }
-.yt-caption { font-size: 12px; color: var(--muted); text-align: center; }
+.yt-caption-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 4px 12px 0; flex-wrap: wrap; flex: 0 0 auto; }
+.yt-caption { margin: 0; font-size: 12px; color: var(--muted); text-align: center; }
 #ytHideBtn { padding: 3px 10px; font-size: 11px; }
+/* 動画自体が小さくてYouTube本体のシークバー・音量が操作しづらいので、それだけ補う軽いコントロール行。
+   再生・一時停止やシーク位置の見た目はYouTube本体のまま（重複させない）。ひとつながりの丸いバーにまとめる。 */
+.yt-controls-row {
+  display: flex; align-items: center; justify-content: center; gap: 4px; margin: 4px 12px 0; flex-wrap: wrap; flex: 0 0 auto;
+  background: var(--panel2); border-radius: 999px; padding: 4px 8px; width: fit-content; margin-left: auto; margin-right: auto;
+}
+.yt-ctrl-btn {
+  appearance: none; border: 0; background: transparent; cursor: pointer; color: var(--text);
+  display: inline-flex; align-items: center; gap: 1px; padding: 4px 7px; border-radius: 999px;
+}
+.yt-ctrl-btn:hover { background: rgba(255, 255, 255, .1); }
+.yt-ctrl-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.yt-ctrl-btn span { font-size: 10px; font-weight: 700; }
+.yt-vol-label { display: inline-flex; align-items: center; gap: 5px; padding: 0 6px 0 8px; color: var(--muted); border-left: 1px solid var(--line2); margin-left: 2px; }
+.yt-vol-label svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+.yt-vol { width: 80px; accent-color: var(--blue); height: 16px; }
 
 .ghost {
   position: fixed; left: 0; top: 0; z-index: 1000; pointer-events: none; opacity: .92;
@@ -219,11 +276,16 @@ body.op-page .item.op-playing { outline: 3px solid #ffd54a; outline-offset: -1px
 .pool-title h2 { margin: 0; font-size: 15px; }
 .pool-count { font-size: 12px; color: var(--muted); }
 .pool-filters { display: flex; flex-wrap: wrap; gap: 6px; }
-.pool-filters input, .pool-filters select {
-  min-width: 0; padding: 7px 9px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line2); background: #121216;
+.pool-filters input, .pool-filters select, .dlg-body select {
+  min-width: 0; padding: 7px 9px; font-size: 14px; border-radius: 6px; border: 1px solid var(--line2); background: #121216; color: var(--text);
 }
 .pool-filters input { flex: 1 1 auto; }
+.dlg-body select { width: 100%; margin-top: 4px; }
 .pool-filters select { flex: 0 0 auto; max-width: 46%; }
+/* 3つ並ぶ行（主題歌Tier表のアーティスト／年代／TV・映画）は、46%上限だと2つしか収まらず1つだけ浮くので、
+   3等分で揃える。 */
+.pool-filters-3 select { flex: 1 1 0; max-width: none; }
+.age-group { display: inline-flex; align-items: baseline; gap: 6px; flex: 0 0 auto; }
 .pool-grid { display: flex; flex-wrap: wrap; align-content: flex-start; padding: 8px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; min-height: 120px; }
 .pool-empty { width: 100%; padding: 28px 12px; text-align: center; color: var(--muted); font-size: 13px; }
 
@@ -247,7 +309,7 @@ dialog::backdrop { background: rgba(0, 0, 0, .7); }
 .detail-no { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
 .detail-title { margin: 2px 0 2px; font-size: 18px; line-height: 1.4; }
 .detail-file { margin: 0; font-size: 12px; color: var(--muted); }
-#dPlayBtn { margin-top: 14px; }
+#dPlayBtn, .dlg-seen-btn { margin-top: 14px; }
 .detail-link { display: inline-block; margin-top: 14px; font-size: 13px; color: #7db8ff; }
 .detail-summary { margin: 10px 0 0; font-size: 14px; line-height: 1.7; font-weight: 500; }
 .detail-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
@@ -277,6 +339,8 @@ textarea#tName, textarea#dMemo {
 .custom-color { display: flex; align-items: center; gap: 10px; margin-top: 10px; font-size: 13px; color: var(--muted); }
 .custom-color input { width: 44px; height: 30px; padding: 0; border: 1px solid var(--line2); background: none; border-radius: 6px; }
 .dlg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.dlg-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.dlg-grid-3 .btn-sm { white-space: normal; line-height: 1.3; text-align: center; }
 .dlg-done { width: 100%; margin-top: 12px; }
 
 /* ---------- toast ---------- */
@@ -391,18 +455,12 @@ dialog.dlg-memo { width: min(94vw, 820px); max-height: 94vh; }
 .tier-note { margin: 4px 0 0; }
 
 /* ---------- anime originals ---------- */
-.pool-filters-2 { margin-top: 6px; }
-.pool-filters-2 select { max-width: none; flex: 1 1 auto; }
 body[data-mode="badge"] .item.is-anime .badge,
 body[data-mode="title"] .item.is-anime .badge { background: rgba(28, 92, 196, .92); }
 
 /* ---------- export / import ---------- */
 .data-actions { align-items: center; margin-top: 8px; }
 .data-hint { font-size: 12px; color: var(--muted); }
-
-.pool-filters-2 select { min-width: 0; }
-#kind { flex: 0 0 44%; max-width: none; }
-.pool-filters-2 select { flex: 1 1 0; max-width: none; }
 
 /* ---------- anime info in manga detail ---------- */
 .anime-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
@@ -417,16 +475,6 @@ a.an-title:hover { color: #7db8ff; }
 .detail-season { display: inline-block; margin: 0 8px 0 0; padding: 1px 10px; border-radius: 999px; background: rgba(28, 92, 196, .3); border: 1px solid #4a86d8; color: #cfe3ff; font-size: 12px; font-weight: 700; }
 .detail-season[hidden] { display: none; }
 .an-season { padding: 0 8px; border-radius: 999px; background: rgba(28, 92, 196, .3); border: 1px solid #4a86d8; color: #cfe3ff; font-size: 11px; font-weight: 700; white-space: nowrap; }
-
-/* ---------- folding filters (narrow screens) ---------- */
-.filter-toggle { display: none; margin-left: auto; }
-@media (max-width: 899px) {
-  .filter-toggle { display: inline-flex; align-items: center; }
-  .pool-title { align-items: center; }
-  .pool:not(.filters-open) #kind,
-  .pool:not(.filters-open) .pool-filters-2,
-  .pool:not(.filters-open) .pool-char-row { display: none; }
-}
 
 /* ---------- found tiles / TV marker / sort ---------- */
 .item { scroll-margin-top: 90px; }

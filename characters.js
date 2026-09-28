@@ -989,7 +989,7 @@
     postDlg.close();
     const url = await myShareLink();
     if (!url) return;
-    const text = "私の名探偵コナンのキャラクターTier表です。あなたの表とくらべてみてください！ #名探偵コナン";
+    const text = "私の名探偵コナンのキャラクターTier表です。リンクから見てみてください！ #名探偵コナン";
     openIntent(text, url);
     toast("Xの投稿画面を開きました");
   });

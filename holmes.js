@@ -1009,7 +1009,7 @@
     postDlg.close();
     const url = await myShareLink();
     if (!url) return;
-    const text = "私のシャーロック・ホームズ作品Tier表です。あなたの表とくらべてみてください！ #シャーロックホームズ";
+    const text = "私のシャーロック・ホームズ作品Tier表です。リンクから見てみてください！ #シャーロックホームズ";
     openIntent(text, url);
     toast("Xの投稿画面を開きました");
   });

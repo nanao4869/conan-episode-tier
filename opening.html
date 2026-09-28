@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.5.1">
+<link rel="stylesheet" href="style.css?v=1.6.0">
 </head>
 <body class="op-page">
 
@@ -59,6 +59,7 @@
         <button type="button" class="btn btn-ghost" id="undoBtn" disabled title="1つ前の状態に戻します（Ctrl+Z）">↶ 元に戻す</button>
         <button type="button" class="btn btn-ghost" id="redoBtn" disabled title="元に戻した操作をやり直します（Ctrl+Y）">↷ やり直す</button>
         <button type="button" class="btn btn-ghost" id="addRowBtn">＋ 行を追加</button>
+        <button type="button" class="btn btn-ghost" id="sortByOrderBtn" title="各行の中の並び順を、放送・掲載順に並び替えます">放送順に並び替え</button>
       </div>
       <div id="dataTools" class="data-tools">
         <div class="board-actions">
@@ -169,7 +170,7 @@
   <p>動画の埋め込みはYouTubeの公式プレーヤーを利用しており、音源・映像はYouTube上のものをそのまま再生しています。</p>
   <p>劇場版の主題歌・上映日の情報は、各アーティスト・レーベルの公式チャンネル、および劇場版主題歌の紹介記事を参考にしています。</p>
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。</p>
-  <p class="version">Ver 1.5.1</p>
+  <p class="version">Ver 1.6.0</p>
 </footer>
 
 <!-- 主題歌詳細 -->
@@ -183,6 +184,7 @@
     <p class="detail-file" id="dMovieNote" hidden></p>
     <p class="detail-file" id="dAgeNote" hidden></p>
     <button type="button" class="btn btn-primary" id="dPlayBtn">▶ この曲を再生</button>
+    <p class="detail-file" id="dNoVideoNote" hidden>この曲は公式動画へのリンクが見つかっていないため、このサイト内では再生できません（YouTube上に見当たらなかった、または非公開・削除されている可能性があります）。</p>
     <button type="button" class="btn btn-ghost dlg-seen-btn" id="dSeenBtn" title="見た上でTierに入れなかった曲だと分かるようにする印です">確認済みにする</button>
     <p class="dlg-label">Tierに入れる</p>
     <div class="chips" id="dChips"></div>
@@ -213,8 +215,8 @@
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/openings.js?v=1.5.1"></script>
-<script src="data/movie-themes.js?v=1.5.1"></script>
-<script src="opening.js?v=1.5.1"></script>
+<script src="data/openings.js?v=1.6.0"></script>
+<script src="data/movie-themes.js?v=1.6.0"></script>
+<script src="opening.js?v=1.6.0"></script>
 </body>
 </html>

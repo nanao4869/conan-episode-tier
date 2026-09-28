@@ -11,6 +11,8 @@
     end: arr[i + 1] && arr[i + 1].start != null ? arr[i + 1].start : Infinity,
   }));
   const BY_NO = new Map(SONGS.map((s) => [s.no, s]));
+  // SONGS is already in the intended browsing order (TV曲→劇場版主題歌), used for 放送順に並び替え.
+  const IDX_BY_NO = new Map(SONGS.map((s, i) => [s.no, i]));
   const VIDEO_ID = window.OP_VIDEO_ID;
 
   const STORAGE_KEY = "conanOpeningTier.v1";
@@ -196,6 +198,16 @@
     save();
     render();
   }
+
+  $("sortByOrderBtn").addEventListener("click", () => {
+    if (!confirm("各行の中の並び順を、放送・掲載順に並び替えます。\n自分でつけた行内の細かい並び順は失われます。よろしいですか？")) return;
+    track(() => {
+      state.tiers.forEach((t) => t.items.sort((a, b) => IDX_BY_NO.get(a) - IDX_BY_NO.get(b)));
+    });
+    save();
+    render();
+    toast("放送順に並び替えました");
+  });
 
   /* -------------------------------------------------------------- rendering */
 
@@ -795,7 +807,9 @@
     const ageAtSong = ageThen(no);
     $("dAgeNote").textContent = ageAtSong != null && ageAtSong >= 0 ? `この曲が出たのは、あなたが${ageAtSong}歳の頃です` : "";
     $("dAgeNote").hidden = ageAtSong == null || ageAtSong < 0;
-    $("dPlayBtn").hidden = s.start == null && !s.video;
+    const hasVideo = s.start != null || !!s.video;
+    $("dPlayBtn").hidden = !hasVideo;
+    $("dNoVideoNote").hidden = hasVideo;
     $("dPlayBtn").onclick = () => {
       playSong(no);
       detailDlg.close(); // ダイアログを開いたままだと、下にある一時停止・早送り・音量などの操作ができない

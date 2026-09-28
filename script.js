@@ -224,6 +224,17 @@
     render();
   }
 
+  $("sortByOrderBtn").addEventListener("click", () => {
+    if (viewMode) return;
+    if (!confirm("各行の中の並び順を、放送・掲載順に並び替えます。\n自分でつけた行内の細かい並び順は失われます。よろしいですか？")) return;
+    track(() => {
+      state.tiers.forEach((t) => t.items.sort((a, b) => IDX_BY_NO.get(a) - IDX_BY_NO.get(b)));
+    });
+    save();
+    render();
+    toast("放送順に並び替えました");
+  });
+
   /* -------------------------------------------------------------- rendering */
 
   const itemCache = new Map();

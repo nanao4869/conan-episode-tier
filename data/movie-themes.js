@@ -24,7 +24,7 @@ window.MOVIE_THEMES = [
   { no: 161, movieNo: 23, movieTitle: "紺青の拳", title: "BLUE SAPPHIRE", artist: "HIROOMI TOSAKA", period: "2019年4月12日", video: "eaq_Rp9xE-E" },
   { no: 162, movieNo: 24, movieTitle: "緋色の弾丸", title: "永遠の不在証明", artist: "東京事変", period: "2021年4月16日", video: "zKBCSBfP9TI" },
   { no: 163, movieNo: 25, movieTitle: "ハロウィンの花嫁", title: "クロノスタシス", artist: "BUMP OF CHICKEN", period: "2022年4月15日", video: "B--iJ2pNvLU" },
-  { no: 164, movieNo: 26, movieTitle: "黒鉄の魚影", title: "美しい鰭", artist: "スピッツ", period: "2023年4月14日", video: "KbGPM9jFeGg" },
+  { no: 164, movieNo: 26, movieTitle: "黒鉄の魚影", title: "美しい鰭", artist: "スピッツ", period: "2023年4月14日", video: "ZXB9OBHCiH8" },
   { no: 165, movieNo: 27, movieTitle: "100万ドルの五稜星", title: "相思相愛", artist: "aiko", period: "2024年4月12日", video: "VmSNNOTB_FE" },
   { no: 166, movieNo: 28, movieTitle: "隻眼の残像", title: "TWILIGHT!!!", artist: "King Gnu", period: "2025年4月18日", video: "qIcIpSyHcyM" },
   { no: 167, movieNo: 29, movieTitle: "ハイウェイの堕天使", title: "ラストダンスはあなたと", artist: "MISIA", period: "2026年4月10日", video: "m4UuJWVt4Zc" },

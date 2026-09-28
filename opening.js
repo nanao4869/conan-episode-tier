@@ -49,15 +49,21 @@
   // so the same artist's songs are visually grouped, not a fresh color for every one of the 133 songs.
   // A separate, more muted palette from the row colors above (those need to stay bright/candy-toned to match
   // the other two Tier makers; these just need to look good as ~130 small cards next to each other).
+  // 倉木麻衣はコナンにとって特別なアーティスト（主題歌を最も多く手がけている）なので、
+  // 一番鮮やかな #d65a5a を専用色として周期パレットから外し、他のアーティストとは絶対に被らないようにする。
   const CARD_PALETTE = [
-    "#d65a5a", "#d68a4a", "#c9a63c", "#8fae3f", "#3f9e6b", "#3aa39c", "#3f88b8", "#4f6fc0",
+    "#d68a4a", "#c9a63c", "#8fae3f", "#3f9e6b", "#3aa39c", "#3f88b8", "#4f6fc0",
     "#6f5fc0", "#9c52ac", "#b8508a", "#5a6472",
   ];
+  const KURAKI_MAI = "倉木麻衣";
+  const KURAKI_MAI_COLOR = "#d65a5a";
   const artistColor = (() => {
     const map = new Map();
     let i = 0;
     return (artist) => {
-      if (!map.has(artist)) map.set(artist, CARD_PALETTE[i++ % CARD_PALETTE.length]);
+      if (!map.has(artist)) {
+        map.set(artist, artist === KURAKI_MAI ? KURAKI_MAI_COLOR : CARD_PALETTE[i++ % CARD_PALETTE.length]);
+      }
       return map.get(artist);
     };
   })();

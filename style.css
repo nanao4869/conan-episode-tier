@@ -654,9 +654,12 @@ body.viewing .pool,
 body.viewing .board-actions,
 body.viewing .data-tools,
 body.viewing .data-tools-slot,
-body.viewing .toolbar-actions,
 body.viewing #statsBtn,
 body.viewing .tier-tools { display: none; }
+/* .toolbar-actions itself stays (unlike the fully-hidden groups above), so a friend can still save the
+   board they're viewing as an image; only the format switch and the X-post button are editing-adjacent. */
+body.viewing .toolbar-actions .seg,
+body.viewing .toolbar-actions #postXBtn { display: none; }
 body.viewing .workspace { grid-template-columns: minmax(0, 1fr); }
 body.viewing .item { cursor: pointer; }
 body.viewing .item .seen-btn,

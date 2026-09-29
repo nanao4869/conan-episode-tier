@@ -234,6 +234,8 @@
     titleEl.textContent = state.title;
     const t = (board.title || "").trim();
     $("viewBannerText").textContent = t ? `「${t}」を表示中（閲覧モード）` : "友達の表を表示中（閲覧モード）";
+    const hasOwn = ownState.tiers.some((t) => t.items.length);
+    $("viewExitBtn").textContent = hasOwn ? "自分の表に戻る" : "自分の表を作る";
     $("viewBanner").hidden = false;
     render();
     window.scrollTo(0, 0);

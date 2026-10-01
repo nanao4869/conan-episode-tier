@@ -383,7 +383,8 @@
   const poolHeadEl = $("poolHead");
   let poolDrag = null;
   poolHeadEl.addEventListener("pointerdown", (e) => {
-    if (!matchMedia("(max-width: 899px)").matches) return;
+    // also draggable on PC once the candidate list is moved below the board (same sticky-sheet treatment)
+    if (!matchMedia("(max-width: 899px)").matches && !document.querySelector(".workspace").classList.contains("pool-below")) return;
     if (e.target.closest("button, select, input, a, label")) return; // let the existing controls keep working
     poolDrag = { id: e.pointerId, startY: e.clientY, startH: poolEl.getBoundingClientRect().height };
     poolEl.classList.add("is-resizing");
@@ -1072,6 +1073,61 @@
     const file = importInput.files[0];
     await importFile(file);
     importInput.value = "";
+  });
+
+  /* --- card size (S/M/L) and candidate-list position: display preferences, PC only (see style.css) --- */
+
+  const SIZE_KEY = "holmesTier.size";
+  const POOL_POS_KEY = "holmesTier.poolPos";
+  const SIZES = ["s", "m", "l"];
+  let cardSize = (() => {
+    try {
+      const v = localStorage.getItem(SIZE_KEY);
+      return SIZES.includes(v) ? v : "m";
+    } catch (e) {
+      return "m";
+    }
+  })();
+  function applyCardSize() {
+    document.body.dataset.size = cardSize;
+    $("sizeToggleBtn").textContent = "表示：" + cardSize.toUpperCase();
+  }
+  applyCardSize();
+  $("sizeToggleBtn").addEventListener("click", () => {
+    cardSize = SIZES[(SIZES.indexOf(cardSize) + 1) % SIZES.length];
+    try {
+      localStorage.setItem(SIZE_KEY, cardSize);
+    } catch (e) {
+      /* not remembered, still works */
+    }
+    applyCardSize();
+  });
+
+  let poolBelow = (() => {
+    try {
+      return localStorage.getItem(POOL_POS_KEY) === "below";
+    } catch (e) {
+      return false;
+    }
+  })();
+  const workspaceEl = document.querySelector(".workspace");
+  function applyPoolPosition() {
+    workspaceEl.classList.toggle("pool-below", poolBelow);
+    $("poolPositionBtn").textContent = poolBelow ? "一覧を右に戻す" : "一覧を下に移動";
+    // a drag/collapse in one layout leaves an inline height on .pool - clear it so the other
+    // layout's own CSS height (sidebar max-height vs. bottom-sheet 42dvh) takes over cleanly.
+    poolEl.style.height = "";
+    poolEl.classList.remove("is-min", "is-resizing");
+  }
+  applyPoolPosition();
+  $("poolPositionBtn").addEventListener("click", () => {
+    poolBelow = !poolBelow;
+    try {
+      localStorage.setItem(POOL_POS_KEY, poolBelow ? "below" : "right");
+    } catch (e) {
+      /* not remembered, still works */
+    }
+    applyPoolPosition();
   });
 
   /* ------------------------------------------------------------------ boot */

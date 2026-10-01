@@ -774,3 +774,46 @@ body.chars-page .tier-items { gap: 6px; padding: 3px; align-content: center; min
 .ch-detail-head { display: flex; align-items: center; gap: 14px; margin-right: 36px; }
 .ch-detail-head img { flex: 0 0 auto; width: 96px; height: 96px; object-fit: cover; border-radius: 12px; background: #24242b; }
 .ch-detail-head .detail-title { margin-top: 2px; }
+
+/* ---------- card size toggle (S/M/L) and pool position (right/below) - desktop only; the mobile
+   breakpoints already compute --tile responsively to guarantee N columns fit, which a fixed S/M/L
+   pixel size would fight with, so both features are no-ops (and their buttons hidden) below 900px. */
+@media (min-width: 900px) {
+  body[data-size="s"] { --tile: 56px; --label-w: 80px; }
+  body[data-size="l"] { --tile: 108px; --label-w: 120px; }
+  body.op-page[data-size="s"] { --tile: 80px; --item-h: 76px; }
+  body.op-page[data-size="l"] { --tile: 144px; --item-h: 124px; }
+  body.chars-page[data-size="s"] { --tile: 68px; --item-h: 92px; }
+  body.chars-page[data-size="l"] { --tile: 120px; --item-h: 152px; }
+
+  .workspace.pool-below { display: block; }
+  /* same sticky, drag-resizable bottom sheet as the mobile .pool rule below, just without the
+     edge-to-edge negative margin (the board column already has a sensible width to match here). */
+  .workspace.pool-below .pool {
+    position: sticky; top: auto; bottom: 0; z-index: 20; margin-top: 16px;
+    height: 42vh; height: 42dvh; max-height: none; border-radius: 14px 14px 0 0; border-bottom: 0;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, .55); transition: height .2s ease; overflow: hidden;
+  }
+  .workspace.pool-below .pool.is-resizing { transition: none; }
+  .workspace.pool-below .pool-collapse-btn { display: inline-flex; align-items: center; margin-left: auto; }
+  .workspace.pool-below #poolHead { position: relative; padding-top: 30px; padding-bottom: 8px; cursor: ns-resize; touch-action: none; }
+  .workspace.pool-below #poolHead::before {
+    content: ""; position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 36px; height: 4px; border-radius: 2px; background: #4a4a56;
+  }
+  .workspace.pool-below .pool.is-min .pool-head > :not(.pool-title),
+  .workspace.pool-below .pool.is-min > :not(.pool-head) { display: none; }
+  .workspace.pool-below .pool.is-min #poolHead { padding-bottom: 12px; }
+  .workspace.pool-below .pool.is-min { bottom: 8px; border: 1px solid var(--line2); border-radius: 14px; }
+  /* below the board there's width to spare but height is the scarce resource, so the search bar /
+     filter buttons / sort buttons flow into one wrapped row instead of stacking, each hugging its
+     own content width instead of stretching full-width. */
+  .workspace.pool-below #poolHead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-top: 26px; padding-bottom: 6px; }
+  .workspace.pool-below #poolHead > div { margin-bottom: 0; flex: 0 0 auto; }
+  .workspace.pool-below .pool-filters { flex: 0 1 260px; }
+  .workspace.pool-below .pool-filters input,
+  .workspace.pool-below .pool-filters select { width: 100%; }
+}
+@media (max-width: 899px) {
+  #sizeToggleBtn, #poolPositionBtn { display: none; }
+}

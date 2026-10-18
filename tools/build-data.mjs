@@ -240,7 +240,14 @@ async function loadWikiManga() {
     if (iN < 0 || iA < 0) return;
     for (let r = 1; r < g.length; r++) {
       const no = ((g[r] || [])[iN] || [])[0];
-      if (/^\d+$/.test(no || "")) rows.set(+no, g[r][iA] || []);
+      if (!/^\d+$/.test(no || "")) continue;
+      // first occurrence wins: Wikipedia has had the newest cases mis-numbered as older ones (334-336 written as
+      // 324-326), and overwriting would wipe the real older cases' anime info
+      if (rows.has(+no)) {
+        warn(`Wikipedia manga list has case ${no} twice (kept the first; the second is "${((g[r] || [])[1] || []).join("")}")`);
+        continue;
+      }
+      rows.set(+no, g[r][iA] || []);
     }
   });
   if (rows.size < 300) throw new Error(`Wikipedia manga list looks wrong (${rows.size} rows) - the page layout may have changed`);
@@ -359,9 +366,12 @@ log("5/6 building data");
 
 // season: Wikipedia's section; the season number is also (air year - 1995) for every episode checked so far
 const seasonOf = (ep) => wikiAnime.get(ep)?.season || (ytv.get(ep) ? +ytv.get(ep).date.slice(0, 4) - 1995 : 0);
-// "original" = the 原作 cell says アニメオリジナル and has no File/巻 reference (those are re-tellings of manga cases)
+// "original" = the 原作 cell says アニメオリジナル and has no File/巻 reference (those are re-tellings of manga cases).
+// Exception: episodes based on the spin-off 『特別編』 (e.g. ep 86, 113) cite a 特別編 File/巻, but 特別編 cases aren't in
+// the websunday main-series list, so without this they'd land in neither list and vanish from the site.
 const isOriginal = (ep) => {
   const src = wikiAnime.get(ep)?.src || "";
+  if (/特別編/.test(src) && /アニメオリジナル/.test(src)) return true;
   return /アニメオリジナル/.test(src) && !/File|第\d+巻/.test(src);
 };
 

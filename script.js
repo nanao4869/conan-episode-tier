@@ -1049,7 +1049,8 @@
     $("dLink").href = isAnime(ep) ? ep.url : `https://websunday.net/episode/${ep.id}`;
     $("dLink").textContent = isAnime(ep) ? "読売テレビの公式サイトでこの話を見る ↗" : "公式サイトでこの事件を見る ↗";
     $("dCharsBox").hidden = ep.c.length === 0;
-    $("dCharsLabel").textContent = ep.ce ? "登場キャラ（あらすじから推定）" : "メインキャラ";
+    $("dCharsLabel").textContent = ep.ce ? "あらすじからの推定" : "";
+    $("dCharsLabel").hidden = !ep.ce;
     renderAnimeInfo(ep);
     $("dChars").replaceChildren(
       ...ep.c.map((id) => {
@@ -1665,7 +1666,7 @@
   } catch (e) {
     /* storage unavailable: default to PNG */
   }
-  const saveIdle = () => `画像として保存（${saveFormat === "jpeg" ? "JPEG" : "PNG"}）`;
+  const saveIdle = () => "画像で保存";
   const POST_IDLE = "Xに投稿";
   const SHARE_TEXT = "名探偵コナンの好きなエピソードTier表を作りました！ リンクから私の表とくらべられます #コナンエピソードTier表 #名探偵コナン";
   const pageUrl = () => (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : "");
@@ -1735,18 +1736,20 @@
 
   function updateSaveHint() {
     const n = state.tiers.filter((t) => isSavedTier(t.id)).length;
-    $("saveGoBtn").disabled = !n;
-    if (!n) return ($("saveHint").textContent = "保存する行を選んでください。");
-    if (saveSplit === "one") return ($("saveHint").textContent = "長い表は、SNSに載せると縮小されて読みにくくなることがあります。");
+    const go = $("saveGoBtn");
+    const hint = $("saveHint");
+    go.disabled = !n;
+    hint.textContent = "";
+    if (!n || saveSplit === "one") return void (go.textContent = "保存する");
     const { stage, clone } = exportClone(false);
     const plan = planPages(clone);
     stage.remove();
     const pages = plan.length;
+    go.textContent = `保存する（${pages}枚）`;
     const notes = [];
-    if (Number(saveSplit) > pages) notes.push("この表はこれ以上細かく分けられません。");
-    if (plan.tooTall) notes.push("1枚が長いので、SNSでは縮小されて読みにくくなることがあります。");
-    if (pages > 4) notes.push("Xは1回の投稿に4枚までです。");
-    $("saveHint").textContent = `${pages === 1 ? "1枚で保存します。" : `${pages}枚に分けて保存します${saveSplit === "split" ? "（行の区切りで分けます）" : "（高さをそろえるため、行の途中で分かれることがあります）"}。`}${notes.join("")}`;
+    if (plan.tooTall) notes.push("1枚が長く、SNSでは縮小されます");
+    if (pages > 4) notes.push("Xに載せられるのは1回4枚まで");
+    hint.textContent = notes.join("／");
   }
 
   splitSel.value = saveSplit;
@@ -1963,11 +1966,11 @@
 
 
   const STATS_HELP = {
-    count: "表に入れたエピソードに、そのキャラが出ている回数です。",
-    score: "そのキャラが出る話を、表全体の平均より何段上に入れているかの順です。出番の多さは関係なく、出番が少なくても上の段に入れていれば上位に来ます（3話以上に出ているキャラが対象。話数が少ないほど控えめに評価します）。",
-    more: "出番（全エピソードでそのキャラが出る割合）に比べて、表に何倍入れているかが大きい順です（出番の2.0倍、など）。3話以上に出ているキャラが対象です。",
-    less: "出番に比べて、表に入れている割合が小さい順です。全エピソードの5%以上に出るキャラが対象です。",
-    rank: "そのキャラが出るエピソードを入れた行が、平均して上から何段目か（小さいほど上位）。3話以上に出ているキャラが対象です。",
+    count: "",
+    score: "3話以上に出ているキャラが対象",
+    more: "3話以上に出ているキャラが対象",
+    less: "全エピソードの5%以上に出るキャラが対象",
+    rank: "3話以上に出ているキャラが対象（小さいほど上位）",
   };
 
   // Groups by role in the story. A character can be in several groups; an episode counts for a group when
@@ -2303,10 +2306,7 @@
       const best = byCount[0];
       return {
         sort,
-        note:
-          "アニメオリジナルは放送年で数えています。マンガは、" +
-          (basis === "anime" ? "最初にアニメ化された放送年（アニメ化されていない事件は単行本の発売年）" : "その事件を収録した最初の単行本の発売年") +
-          "で数えています。",
+        note: basis === "anime" ? "アニメ化されていない事件は単行本の発売年" : "",
         top: best ? `いちばん多い${word}：${label(best.key)}（${best.n}話・${pct(best.share)}）` : "",
         word,
         lists: [
@@ -2404,8 +2404,8 @@
     const { placed } = ctx;
     const nManga = placed.filter((p) => !isAnime(p.ep)).length;
     $("statsSummary").textContent = placed.length && !viewMode
-      ? `表に入れた${placed.length}話（マンガ${nManga}・アニメ${placed.length - nManga}）を集計しています。` +
-        (!ctx.enough && tab !== "compare" ? `「出番の○倍」の表示は、${MIN_PLACED_FOR_BIAS}話以上入れると出ます。` : "")
+      ? `${placed.length}話（マンガ${nManga}・アニメ${placed.length - nManga}）` +
+        (!ctx.enough && tab !== "compare" ? `　出番の○倍は${MIN_PLACED_FOR_BIAS}話以上で表示` : "")
       : "";
     if (tab === "compare") renderStatsCompare();
     else renderStatsTab(tab, ctx);
@@ -2754,7 +2754,7 @@
     if (tab === "compare") buildCompareSheet(sheet, n);
     else buildRankSheet(sheet, tab, n);
     // how many episodes were counted and which options were on: useful, but not the point, so it goes last
-    const summary = statsContext(tab).placed.length ? $("statsSummary").textContent.split("「出番の○倍」の表示は")[0].replace("を集計しています。", "") : "";
+    const summary = statsContext(tab).placed.length ? $("statsSummary").textContent.split("　")[0] : "";
     const settings = statsConditions(tab).split(" ／ ").filter(Boolean);
     const notes = mk("div", "xs-notes");
     const compareNote = tab === "compare" ? "「だけが評価した話」＝もう一方の表に入っていない話（低く評価している、とは別）" : "";

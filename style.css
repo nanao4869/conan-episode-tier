@@ -380,7 +380,11 @@ body.op-page .board.exporting { --tile: 112px; }
 .save-row:hover { background: rgba(255, 255, 255, .05); }
 .save-row input { width: 18px; height: 18px; flex: 0 0 auto; }
 .save-row-chip { min-width: 40px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-align: center; }
-.save-hint { margin: 10px 0 0; font-size: 12px; color: var(--muted); min-height: 1.5em; }
+.save-hint { margin: 10px 0 0; font-size: 12px; color: #ffb35c; }
+.save-hint:empty { display: none; }
+.save-rows-head .dlg-h { margin: 0; }
+#saveRows { margin-top: 12px; }
+#saveSplit { margin-top: 12px; }
 
 .pool-collapse-btn { display: none; } /* スマホ幅（下の @media）でだけ使う */
 /* ---------- narrow screens ---------- */
@@ -605,6 +609,8 @@ dialog.dlg-stats { width: min(94vw, 680px); }
 .stats-save { display: flex; gap: 8px; margin-top: 18px; }
 .stats-save select { padding: 8px 10px; font-size: 14px; border-radius: 8px; border: 1px solid var(--line2); background: #121216; }
 .stats-save .btn { flex: 1 1 auto; }
+.stats-save select { flex: 0 0 auto; width: auto; margin-top: 0; }
+.stats-save select.stats-save-opts { margin: 0; display: block; }
 
 
 .stats-save-opts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 16px; }
@@ -828,3 +834,12 @@ body.chars-page .tier-items { gap: 6px; padding: 3px; align-content: center; min
 @media (max-width: 899px) {
   #sizeToggleBtn, #poolPositionBtn { display: none; }
 }
+
+/* label-less dialogs: spacing (not captions) separates the groups */
+.save-rows-head { margin-right: 40px; }
+body:not(.op-page) #detailDialog #dAnimeBox, body:not(.op-page) #detailDialog #dCharsBox { margin-top: 14px; }
+body:not(.op-page) #detailDialog #dCharsLabel { margin: 0 0 6px; font-size: 11px; }
+body:not(.op-page) #detailDialog .chips { margin-top: 16px; }
+body:not(.op-page) #detailDialog #dMemoBox { margin-top: 14px; }
+body:not(.op-page) #filterDialog .dlg-grid, body:not(.op-page) #filterDialog .age-group { margin-top: 12px; }
+body:not(.op-page) #tierDialog .swatches { margin-top: 12px; }

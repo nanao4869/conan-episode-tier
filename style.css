@@ -370,6 +370,17 @@ body.op-page .board.exporting { --tile: 112px; }
 .board.exporting .list-title { pointer-events: none; }
 .board.exporting .list-title:empty { display: none; }
 .board.exporting .list-title:hover { background: none; }
+.board.exporting .page-no { float: left; font-weight: 700; color: var(--text); }
+
+/* save dialog */
+.save-rows-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.save-rows-btns { display: flex; gap: 6px; }
+.save-rows { display: flex; flex-direction: column; gap: 4px; max-height: 40vh; overflow-y: auto; }
+.save-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.save-row:hover { background: rgba(255, 255, 255, .05); }
+.save-row input { width: 18px; height: 18px; flex: 0 0 auto; }
+.save-row-chip { min-width: 40px; padding: 2px 8px; border-radius: 4px; font-weight: 800; text-align: center; }
+.save-hint { margin: 10px 0 0; font-size: 12px; color: var(--muted); min-height: 1.5em; }
 
 .pool-collapse-btn { display: none; } /* スマホ幅（下の @media）でだけ使う */
 /* ---------- narrow screens ---------- */

@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=1.17.0">
+<link rel="stylesheet" href="style.css?v=1.18.0">
 </head>
 <body data-mode="title">
 
@@ -158,7 +158,7 @@
 
 <footer class="site-footer">
   <p>名探偵コナン © 青山剛昌／小学館。非公式のファンツールです。 <button type="button" class="link-btn" id="aboutBtn">このサイトについて</button></p>
-  <p class="version">Ver 1.17.0</p>
+  <p class="version">Ver 1.18.0</p>
 </footer>
 
 <!-- このサイトについて -->
@@ -466,10 +466,40 @@
   </div>
 </dialog>
 
+<dialog id="saveDialog">
+  <div class="dlg-body">
+    <button type="button" class="dlg-close" data-close aria-label="閉じる">×</button>
+    <h3 class="dlg-h">画像として保存</h3>
+    <span class="dlg-label save-rows-head">保存する行
+      <span class="save-rows-btns">
+        <button type="button" class="btn btn-ghost btn-sm" id="saveRowsAll">すべて</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="saveRowsNone">解除</button>
+      </span>
+    </span>
+    <div id="saveRows" class="save-rows"></div>
+    <span class="dlg-label">枚数</span>
+    <select id="saveSplit" aria-label="枚数">
+      <option value="split">自動で分ける（SNS向け）</option>
+      <option value="one">1枚にまとめる</option>
+      <option value="2">2枚に分ける</option>
+      <option value="3">3枚に分ける</option>
+      <option value="4">4枚に分ける</option>
+      <option value="5">5枚に分ける</option>
+      <option value="6">6枚に分ける</option>
+      <option value="7">7枚に分ける</option>
+      <option value="8">8枚に分ける</option>
+      <option value="9">9枚に分ける</option>
+      <option value="10">10枚に分ける</option>
+    </select>
+    <p class="save-hint" id="saveHint"></p>
+    <button type="button" class="btn btn-primary dlg-done" id="saveGoBtn">保存する</button>
+  </div>
+</dialog>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js"></script>
-<script src="data/episodes.js?v=1.17.0"></script>
-<script src="script.js?v=1.17.0"></script>
+<script src="data/episodes.js?v=1.18.0"></script>
+<script src="script.js?v=1.18.0"></script>
 </body>
 </html>

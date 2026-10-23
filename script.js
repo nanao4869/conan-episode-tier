@@ -1431,7 +1431,41 @@
 
   // Renders an off-screen copy at a fixed 1000px desktop layout so the saved image looks the
   // same no matter which device made it, and the on-screen board never has to reflow.
+  // Returns one data URL per image: rows left out in the save dialog are dropped, and in "split" mode the board is
+  // cut at row boundaries (a very long row is cut between its lines of cards) so no image is taller than PAGE_MAX_H.
   async function exportImage(format = "png") {
+    const { stage, clone } = exportClone(true);
+    try {
+      if (saveSplit === "one") return [await captureNode(clone, format)];
+      const pages = planPages(clone).map((pieces, i, all) => {
+        const page = clone.cloneNode(false);
+        page.append(clone.querySelector(".list-title").cloneNode(true));
+        const tiers = clone.querySelector(".tiers").cloneNode(false);
+        pieces.forEach(({ tier, from, to }) => {
+          const t = tier.cloneNode(true);
+          [...t.querySelectorAll(".tier-items > .item")].forEach((n, k) => {
+            if (k < from || k >= to) n.remove();
+          });
+          tiers.append(t);
+        });
+        page.append(tiers);
+        const credit = clone.querySelector(".board-credit").cloneNode(true);
+        if (all.length > 1) credit.prepend(Object.assign(document.createElement("span"), { className: "page-no", textContent: `${i + 1} / ${all.length}` }));
+        page.append(credit);
+        return page;
+      });
+      clone.remove();
+      stage.append(...pages);
+      const urls = [];
+      for (const page of pages) urls.push(await captureNode(page, format));
+      return urls;
+    } finally {
+      stage.remove();
+    }
+  }
+
+  // The board as it will be saved, laid out off-screen. `eager` loads the pictures (not needed just to measure).
+  function exportClone(eager) {
     const stage = document.createElement("div");
     stage.className = "export-stage";
     const clone = boardEl.cloneNode(true);
@@ -1439,15 +1473,110 @@
     clone.classList.add("exporting");
     clone.querySelectorAll(".no-export").forEach((n) => n.remove());
     clone.querySelectorAll(".item").forEach((n) => n.classList.remove("drag-source", "found", "pulse"));
-    clone.querySelectorAll("img").forEach((img) => img.setAttribute("loading", "eager"));
+    if (eager) clone.querySelectorAll("img").forEach((img) => img.setAttribute("loading", "eager"));
     clone.querySelector(".list-title").removeAttribute("contenteditable");
+    clone.querySelectorAll(".tier").forEach((t) => {
+      if (!isSavedTier(t.dataset.id)) t.remove();
+    });
     stage.append(clone);
     document.body.append(stage);
-    try {
-      return await captureNode(clone, format);
-    } finally {
-      stage.remove();
+    return { stage, clone };
+  }
+
+  // CSS px. Pages this tall are drawn at 2x, i.e. 2000 x 4000px: inside X's 4096px limit, so X doesn't shrink them.
+  const PAGE_MAX_H = 2000;
+
+  // Groups the (laid-out) rows of an export clone into pages: [[{tier, from, to}, ...], ...], item ranges per row.
+  // "split" fills pages up to the SNS-safe height; a number N gives N pages of about equal height (the shortest
+  // page height that still fits in N). `tooTall` = some page is over the SNS-safe height.
+  function planPages(clone) {
+    const rows = [...clone.querySelectorAll(".tier")].map((tier) => {
+      const h = tier.getBoundingClientRect().height;
+      const items = [...tier.querySelectorAll(".tier-items > .item")];
+      const tops = [...new Set(items.map((n) => n.offsetTop))];
+      const pitch = tops.length > 1 ? tops[1] - tops[0] : h;
+      return { tier, h, items, tops, pitch, extra: Math.max(0, h - tops.length * pitch) };
+    });
+    const tiersH = rows.reduce((s, r) => s + r.h, 0);
+    const safe = Math.max(300, PAGE_MAX_H - (clone.getBoundingClientRect().height - tiersH)); // minus title, credit, padding
+    const count = Number(saveSplit);
+    if (!count) return Object.assign(packPages(rows, safe), { tooTall: false });
+    let lo = Math.min(safe, ...rows.map((r) => r.extra + r.pitch));
+    let hi = Math.max(tiersH, lo);
+    while (hi - lo > 4) {
+      const mid = (lo + hi) / 2;
+      if (fillPages(rows, mid).length <= count) hi = mid;
+      else lo = mid;
     }
+    return Object.assign(fillPages(rows, hi), { tooTall: hi > safe });
+  }
+
+  // Like packPages, but a row continues on the next page from wherever the page filled up, so pages come out
+  // about the same height (used when the user picked the number of pages).
+  function fillPages(rows, budget) {
+    const pages = [];
+    let cur = [];
+    let used = 0;
+    const next = () => {
+      pages.push(cur);
+      cur = [];
+      used = 0;
+    };
+    rows.forEach(({ tier, h, items, tops, pitch, extra }) => {
+      if (items.length < 2 || tops.length < 2) {
+        if (cur.length && used + h > budget) next();
+        cur.push({ tier, from: 0, to: items.length });
+        used += h;
+        return;
+      }
+      let line = 0;
+      while (line < tops.length) {
+        let fit = Math.floor((budget - used - extra) / pitch);
+        if (fit < 1 && cur.length) {
+          next();
+          fit = Math.floor((budget - extra) / pitch);
+        }
+        fit = Math.min(Math.max(1, fit), tops.length - line);
+        const hi = tops[line + fit];
+        const from = items.findIndex((n) => n.offsetTop >= tops[line]);
+        const to = hi === undefined ? items.length : items.findIndex((n) => n.offsetTop >= hi);
+        cur.push({ tier, from, to });
+        used += extra + fit * pitch;
+        line += fit;
+      }
+    });
+    if (cur.length || !pages.length) pages.push(cur);
+    return pages;
+  }
+
+  function packPages(rows, budget) {
+    const pieces = [];
+    rows.forEach(({ tier, h, items, tops, pitch, extra }) => {
+      if (h <= budget || items.length < 2) return pieces.push({ tier, from: 0, to: items.length, h });
+      // Too tall for one page: cut between lines of cards.
+      const linesPer = Math.max(1, Math.floor((budget - extra) / pitch));
+      for (let line = 0; line < tops.length; line += linesPer) {
+        const lo = tops[line];
+        const hi = tops[line + linesPer];
+        const from = items.findIndex((n) => n.offsetTop >= lo);
+        const to = hi === undefined ? items.length : items.findIndex((n) => n.offsetTop >= hi);
+        pieces.push({ tier, from, to, h: extra + (Math.min(line + linesPer, tops.length) - line) * pitch });
+      }
+    });
+    const pages = [];
+    let cur = [];
+    let used = 0;
+    pieces.forEach((p) => {
+      if (cur.length && used + p.h > budget) {
+        pages.push(cur);
+        cur = [];
+        used = 0;
+      }
+      cur.push(p);
+      used += p.h;
+    });
+    if (cur.length || !pages.length) pages.push(cur);
+    return pages;
   }
 
   // Draws an off-screen node (already in the document) into an image data URL, PNG or JPEG.
@@ -1496,7 +1625,7 @@
     }
   }
 
-  const imageName = (format) => `conan_episode_tier_${dateStamp()}.${format === "jpeg" ? "jpg" : "png"}`;
+  const imageName = (format, part) => `conan_episode_tier_${dateStamp()}${part ? `_${part}` : ""}.${format === "jpeg" ? "jpg" : "png"}`;
 
   function downloadImage(dataUrl, format, name = imageName(format)) {
     const a = document.createElement("a");
@@ -1563,10 +1692,100 @@
   document.querySelectorAll('input[name="format"]').forEach((r) => (r.checked = r.value === saveFormat));
   $("statsFormat").value = saveFormat;
 
-  saveBtn.addEventListener("click", async () => {
+  // Save dialog: which rows go into the image, and one image or several SNS-sized ones.
+  // A long board saved as one image gets shrunk by X (longest side 4096px) until the cards can't be read.
+  const SPLIT_KEY = "conanEpisodeTier.split";
+  let saveSplit = "split"; // "one", "split" (automatic) or a page count "2".."10"
+  const splitSel = $("saveSplit");
+  try {
+    const v = localStorage.getItem(SPLIT_KEY);
+    if ([...splitSel.options].some((o) => o.value === v)) saveSplit = v;
+  } catch (e) {
+    /* storage unavailable: default to split */
+  }
+  const saveExcluded = new Set(); // tier ids left out (in memory only; a new row is always included)
+  const isSavedTier = (id) => !saveExcluded.has(id);
+  const saveDlg = $("saveDialog");
+  const saveRowsEl = $("saveRows");
+
+  function renderSaveRows() {
+    saveRowsEl.replaceChildren(
+      ...state.tiers.map((t) => {
+        const label = document.createElement("label");
+        label.className = "save-row";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = isSavedTier(t.id);
+        cb.addEventListener("change", () => {
+          if (cb.checked) saveExcluded.delete(t.id);
+          else saveExcluded.add(t.id);
+          updateSaveHint();
+        });
+        const chip = document.createElement("span");
+        chip.className = "save-row-chip";
+        chip.style.background = t.color;
+        chip.style.color = textColorFor(t.color);
+        chip.textContent = t.name.split("\n")[0] || " ";
+        const sub = t.name.split("\n").slice(1).join(" ");
+        label.append(cb, chip, document.createTextNode(`${sub ? `${sub}　` : ""}${t.items.length}話`));
+        return label;
+      })
+    );
+  }
+
+  function updateSaveHint() {
+    const n = state.tiers.filter((t) => isSavedTier(t.id)).length;
+    $("saveGoBtn").disabled = !n;
+    if (!n) return ($("saveHint").textContent = "保存する行を選んでください。");
+    if (saveSplit === "one") return ($("saveHint").textContent = "長い表は、SNSに載せると縮小されて読みにくくなることがあります。");
+    const { stage, clone } = exportClone(false);
+    const plan = planPages(clone);
+    stage.remove();
+    const pages = plan.length;
+    const notes = [];
+    if (Number(saveSplit) > pages) notes.push("この表はこれ以上細かく分けられません。");
+    if (plan.tooTall) notes.push("1枚が長いので、SNSでは縮小されて読みにくくなることがあります。");
+    if (pages > 4) notes.push("Xは1回の投稿に4枚までです。");
+    $("saveHint").textContent = `${pages === 1 ? "1枚で保存します。" : `${pages}枚に分けて保存します${saveSplit === "split" ? "（行の区切りで分けます）" : "（高さをそろえるため、行の途中で分かれることがあります）"}。`}${notes.join("")}`;
+  }
+
+  splitSel.value = saveSplit;
+  splitSel.addEventListener("change", () => {
+    saveSplit = splitSel.value;
+    try {
+      localStorage.setItem(SPLIT_KEY, saveSplit);
+    } catch (e) {
+      /* not remembered, still works */
+    }
+    updateSaveHint();
+  });
+  $("saveRowsAll").addEventListener("click", () => {
+    saveExcluded.clear();
+    renderSaveRows();
+    updateSaveHint();
+  });
+  $("saveRowsNone").addEventListener("click", () => {
+    state.tiers.forEach((t) => saveExcluded.add(t.id));
+    renderSaveRows();
+    updateSaveHint();
+  });
+
+  saveBtn.addEventListener("click", () => {
+    renderSaveRows();
+    updateSaveHint();
+    saveDlg.showModal();
+  });
+
+  $("saveGoBtn").addEventListener("click", async () => {
+    saveDlg.close();
     const format = saveFormat; // what was selected when the button was pressed
-    const dataUrl = await renderImage(saveBtn, saveIdle(), format);
-    if (dataUrl) downloadImage(dataUrl, format);
+    const urls = await renderImage(saveBtn, saveIdle(), format);
+    if (!urls) return;
+    for (let i = 0; i < urls.length; i++) {
+      downloadImage(urls[i], format, urls.length > 1 ? imageName(format, i + 1) : imageName(format));
+      if (i < urls.length - 1) await new Promise((r) => setTimeout(r, 400)); // browsers drop downloads fired all at once
+    }
+    if (urls.length > 1) toast(`${urls.length}枚の画像を保存しました`);
   });
 
   // Two ways to post, so the long board link never comes as a surprise: introduce the site (plain URL), or post the board (link with its contents).
@@ -1594,13 +1813,14 @@
   $("postBoardBtn").addEventListener("click", async () => {
     postDlg.close();
     if (canShareFiles()) {
-      const dataUrl = await renderImage(postXBtn, POST_IDLE, "png");
-      if (!dataUrl) return;
+      // Same rows / splitting as the save dialog; X takes at most 4 images per post.
+      const urls = await renderImage(postXBtn, POST_IDLE, "png");
+      if (!urls) return;
       const shareUrl = (await shareLinkNow()) || pageUrl();
-      const file = dataUrlToFile(dataUrl, imageName("png"));
-      if (navigator.canShare({ files: [file] })) {
+      const files = urls.slice(0, 4).map((u, i) => dataUrlToFile(u, imageName("png", urls.length > 1 ? i + 1 : 0)));
+      if (navigator.canShare({ files })) {
         try {
-          await navigator.share({ files: [file], text: SHARE_TEXT, ...(shareUrl ? { url: shareUrl } : {}) });
+          await navigator.share({ files, text: SHARE_TEXT, ...(shareUrl ? { url: shareUrl } : {}) });
           return;
         } catch (e) {
           if (e.name === "AbortError") return; // the user closed the share sheet
